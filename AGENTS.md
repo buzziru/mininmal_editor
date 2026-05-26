@@ -1,0 +1,255 @@
+## Project Context
+
+This project is a local-first Markdown editor for Windows with a minimalist three-pane interface.
+
+Core layout:
+
+```text
+| File List | Editor | Preview |
+````
+
+The MVP focuses on:
+
+* Local Markdown file management
+* Markdown editing and preview
+* Minimal note-linking foundation
+* Light and dark themes
+* Clean and extensible architecture
+
+This project is not intended to replicate all Obsidian features during the MVP phase.
+
+Detailed requirements and specifications are documented separately:
+
+```text
+README.md
+docs/PRD.md
+docs/MVP_SPEC.md
+docs/ARCHITECTURE.md
+docs/DATA_MODEL.md
+docs/STYLE_GUIDE.md
+docs/TASK.md
+```
+
+---
+
+# Primary Rules
+
+## 1. Build Only Within MVP Scope
+
+Always prioritize the MVP.
+
+Do not implement features outside the current MVP scope unless explicitly requested.
+
+Examples of out-of-scope features:
+
+* Google Drive synchronization
+* Plugin system
+* Graph visualization
+* Collaboration
+* AI assistant features
+* Mobile support
+* Rich-text editor
+* Complex backlink analytics
+
+Before implementing a feature, verify whether it belongs to the MVP specification.
+
+---
+
+## 2. Avoid Overengineering
+
+Prefer simple and maintainable solutions.
+
+Avoid introducing unnecessary complexity such as:
+
+* premature abstractions
+* event buses
+* plugin registries
+* complex state machines
+* unnecessary databases
+* custom parsing engines
+* speculative optimizations
+
+The MVP should remain understandable and easy to modify.
+
+---
+
+## 3. Preserve Architecture Boundaries
+
+UI components must not directly own storage logic.
+
+Use clear separation between:
+
+```text
+UI
+Application Services
+Storage Layer
+```
+
+Local storage is the only required storage implementation for the MVP.
+
+However, the architecture should allow future storage providers without major rewrites.
+
+Do not hard-code file-system assumptions throughout the application.
+
+---
+
+## 4. Preserve User Data
+
+Treat local Markdown files as the source of truth.
+
+Be conservative with file operations.
+
+Avoid:
+
+* accidental overwrites
+* destructive renaming
+* silent deletion
+* unsafe automatic migrations
+
+When implementing deletion behavior, require explicit confirmation where appropriate.
+
+---
+
+# Task Execution Rules
+
+## Before Starting Work
+
+Read the following documents when relevant:
+
+```text
+README.md
+docs/MVP_SPEC.md
+docs/ARCHITECTURE.md
+docs/DATA_MODEL.md
+docs/STYLE_GUIDE.md
+```
+
+Do not assume undocumented behavior.
+
+Read and write all Markdown project documents as UTF-8. In PowerShell, use
+`Get-Content -Encoding UTF8` when reading documents to avoid mojibake.
+
+---
+
+## During Implementation
+
+Prefer:
+
+* small commits
+* isolated changes
+* explicit behavior
+* readable code
+* incremental improvements
+
+Avoid:
+
+* modifying unrelated files
+* large mixed refactors
+* hidden side effects
+* changing existing behavior unnecessarily
+
+---
+
+## When Making Structural Changes
+
+Before major architectural modifications:
+
+1. explain the reasoning
+2. identify affected layers
+3. preserve MVP constraints
+4. avoid introducing speculative systems
+
+Large rewrites should be avoided unless necessary.
+
+---
+
+# Documentation Rules
+
+Documentation must remain synchronized with implementation.
+
+Update relevant documents when behavior or structure changes.
+
+Examples:
+
+| Change         | Update                 |
+| -------------- | ---------------------- |
+| feature scope  | `docs/MVP_SPEC.md`     |
+| architecture   | `docs/ARCHITECTURE.md` |
+| data structure | `docs/DATA_MODEL.md`   |
+| UI conventions | `docs/STYLE_GUIDE.md`  |
+| task progress  | `docs/TASK.md`         |
+
+Do not allow implementation and documentation to diverge.
+
+---
+
+# Code Guidelines
+
+## General
+
+* Prefer TypeScript.
+* Prefer explicit types for public interfaces.
+* Keep components focused and small.
+* Separate UI state from storage state.
+* Prefer composition over deeply coupled components.
+
+---
+
+## Naming
+
+Use descriptive and domain-oriented names.
+
+Preferred examples:
+
+```text
+Document
+Workspace
+DocumentLink
+StorageProvider
+DocumentService
+LocalFileStorage
+```
+
+Avoid vague naming such as:
+
+```text
+Manager
+Helper
+Thing
+Data
+Util
+```
+
+unless the abstraction is genuinely generic.
+
+---
+
+# Git Guidelines
+
+Create meaningful commits.
+
+Recommended commit types:
+
+```text
+feat:
+fix:
+refactor:
+docs:
+style:
+```
+
+Avoid large commits combining unrelated work.
+
+---
+
+# Non-Goals
+
+The MVP is intended to validate:
+
+* local Markdown editing
+* three-pane workflow
+* local file management
+* extensible storage structure
+* lightweight knowledge-linking foundation
+
+The goal is not to reproduce the full feature set of Obsidian.
