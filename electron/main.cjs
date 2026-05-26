@@ -2,6 +2,8 @@ const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
+let activeWorkspaceRoot;
+
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -33,10 +35,28 @@ app.whenReady().then(() => {
     }
 
     const rootPath = result.filePaths[0];
+    activeWorkspaceRoot = path.resolve(rootPath);
 
     return {
-      workspace: { rootPath },
-      documents: await listMarkdownDocuments(rootPath, rootPath),
+      workspace: { rootPath: activeWorkspaceRoot },
+      documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
+    };
+  });
+
+  ipcMain.handle("document:read", async (_event, documentPath) => {
+    if (!activeWorkspaceRoot) {
+      throw new Error("No workspace is open.");
+    }
+
+    const filePath = resolveWorkspaceDocumentPath(activeWorkspaceRoot, documentPath);
+    const [content, fileStats] = await Promise.all([fs.readFile(filePath, "utf8"), fs.stat(filePath)]);
+
+    return {
+      path: toDocumentPath(activeWorkspaceRoot, filePath),
+      title: getDocumentTitle(content, filePath),
+      content,
+      createdAt: fileStats.birthtime.toISOString(),
+      updatedAt: fileStats.mtime.toISOString(),
     };
   });
 
@@ -72,7 +92,7 @@ const listMarkdownDocuments = async (workspaceRoot, directoryPath) => {
     }
 
     const fileStats = await fs.stat(entryPath);
-    const documentPath = path.relative(workspaceRoot, entryPath).split(path.sep).join("/");
+    const documentPath = toDocumentPath(workspaceRoot, entryPath);
 
     documents.push({
       path: documentPath,
@@ -82,4 +102,37 @@ const listMarkdownDocuments = async (workspaceRoot, directoryPath) => {
   }
 
   return documents.sort((left, right) => left.path.localeCompare(right.path));
+};
+
+const resolveWorkspaceDocumentPath = (workspaceRoot, documentPath) => {
+  if (path.isAbsolute(documentPath)) {
+    throw new Error(`Document path must be relative to the workspace: ${documentPath}`);
+  }
+
+  if (path.extname(documentPath).toLowerCase() !== ".md") {
+    throw new Error(`Only .md documents are supported: ${documentPath}`);
+  }
+
+  const resolvedPath = path.resolve(workspaceRoot, documentPath);
+  const relativePath = path.relative(workspaceRoot, resolvedPath);
+
+  if (relativePath === "" || relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    throw new Error(`Document path must stay inside the workspace: ${documentPath}`);
+  }
+
+  return resolvedPath;
+};
+
+const toDocumentPath = (workspaceRoot, filePath) => path.relative(workspaceRoot, filePath).split(path.sep).join("/");
+
+const getDocumentTitle = (content, filePath) => {
+  const heading = content
+    .split(/\r?\n/)
+    .map((line) => {
+      const match = line.match(/^#\s+(.+?)\s*$/);
+      return match ? match[1].trim() : undefined;
+    })
+    .find(Boolean);
+
+  return heading || path.basename(filePath, path.extname(filePath));
 };

@@ -1,4 +1,4 @@
-import type { DocumentMetadata } from "../models/Document";
+import type { Document, DocumentMetadata } from "../models/Document";
 import type { Workspace } from "../models/Workspace";
 
 export interface OpenWorkspaceResult {
@@ -6,11 +6,17 @@ export interface OpenWorkspaceResult {
   documents: Array<Omit<DocumentMetadata, "updatedAt"> & { updatedAt?: string }>;
 }
 
+export type ReadDocumentResult = Omit<Document, "createdAt" | "updatedAt"> & {
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 declare global {
   interface Window {
     markdownEditor?: {
       platform: NodeJS.Platform;
       openWorkspace: () => Promise<OpenWorkspaceResult | null>;
+      readDocument: (documentPath: string) => Promise<ReadDocumentResult>;
     };
   }
 }

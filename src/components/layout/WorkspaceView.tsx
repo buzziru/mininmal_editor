@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { DocumentMetadata } from "../../models/Document";
+import type { Document, DocumentMetadata } from "../../models/Document";
 import type { Workspace } from "../../models/Workspace";
 
 const sampleDocuments = ["notes.md", "projects.md", "ideas/startup.md"];
@@ -8,8 +8,11 @@ const sampleDocuments = ["notes.md", "projects.md", "ideas/startup.md"];
 export function WorkspaceView() {
   const [workspace, setWorkspace] = useState<Workspace>();
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<Document>();
+  const [documentContent, setDocumentContent] = useState("");
   const [errorMessage, setErrorMessage] = useState<string>();
-  const visibleDocuments = documents.length > 0 ? documents.map((document) => document.path) : sampleDocuments;
+  const [isLoadingDocument, setIsLoadingDocument] = useState(false);
+  const visibleDocuments = workspace ? documents.map((document) => document.path) : sampleDocuments;
 
   const openWorkspace = async (): Promise<void> => {
     setErrorMessage(undefined);
@@ -22,14 +25,47 @@ export function WorkspaceView() {
       }
 
       setWorkspace(result.workspace);
-      setDocuments(
-        result.documents.map((document) => ({
-          ...document,
-          updatedAt: document.updatedAt ? new Date(document.updatedAt) : undefined,
-        })),
-      );
+      setSelectedDocument(undefined);
+      setDocumentContent("");
+
+      const nextDocuments = result.documents.map((document) => ({
+        ...document,
+        updatedAt: document.updatedAt ? new Date(document.updatedAt) : undefined,
+      }));
+
+      setDocuments(nextDocuments);
+
+      if (nextDocuments[0]) {
+        await loadDocument(nextDocuments[0].path);
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to open workspace.");
+    }
+  };
+
+  const loadDocument = async (documentPath: string): Promise<void> => {
+    setErrorMessage(undefined);
+    setIsLoadingDocument(true);
+
+    try {
+      const result = await window.markdownEditor?.readDocument(documentPath);
+
+      if (!result) {
+        return;
+      }
+
+      const nextDocument: Document = {
+        ...result,
+        createdAt: result.createdAt ? new Date(result.createdAt) : undefined,
+        updatedAt: result.updatedAt ? new Date(result.updatedAt) : undefined,
+      };
+
+      setSelectedDocument(nextDocument);
+      setDocumentContent(nextDocument.content);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to read document.");
+    } finally {
+      setIsLoadingDocument(false);
     }
   };
 
@@ -46,23 +82,44 @@ export function WorkspaceView() {
         {errorMessage ? <p className="error-message">{errorMessage}</p> : null}
         <nav className="file-list" aria-label="Markdown files">
           {visibleDocuments.map((documentPath) => (
-            <button key={documentPath} type="button" className="file-list-item">
+            <button
+              key={documentPath}
+              type="button"
+              className={
+                documentPath === selectedDocument?.path ? "file-list-item is-selected" : "file-list-item"
+              }
+              onClick={() => {
+                void loadDocument(documentPath);
+              }}
+            >
               {documentPath}
             </button>
           ))}
+          {workspace && visibleDocuments.length === 0 ? (
+            <p className="empty-state">No Markdown files found.</p>
+          ) : null}
         </nav>
       </aside>
 
       <section className="pane editor-pane" aria-label="Markdown editor">
         <header className="pane-header">
-          <h2>Editor</h2>
+          <h2>{selectedDocument ? selectedDocument.title : "Editor"}</h2>
         </header>
-        <textarea
-          className="editor-input"
-          defaultValue={"# Welcome\n\nStart writing Markdown here.\n\n#tag\n\n[[notes]]"}
-          spellCheck="false"
-          aria-label="Markdown content"
-        />
+        {selectedDocument ? (
+          <textarea
+            className="editor-input"
+            value={documentContent}
+            spellCheck="false"
+            aria-label="Markdown content"
+            onChange={(event) => {
+              setDocumentContent(event.target.value);
+            }}
+          />
+        ) : (
+          <div className="editor-empty-state">
+            {isLoadingDocument ? "Loading document..." : "Open a workspace and select a Markdown file."}
+          </div>
+        )}
       </section>
 
       <section className="pane preview-pane" aria-label="Markdown preview">
@@ -70,12 +127,11 @@ export function WorkspaceView() {
           <h2>Preview</h2>
         </header>
         <article className="preview-content">
-          <h1>Welcome</h1>
-          <p>Start writing Markdown here.</p>
-          <p className="tag-chip">#tag</p>
-          <p>
-            <a href="#notes">[[notes]]</a>
-          </p>
+          {selectedDocument ? (
+            <pre className="preview-plain-text">{documentContent}</pre>
+          ) : (
+            <p className="empty-state">Select a document to preview its content.</p>
+          )}
         </article>
       </section>
     </main>

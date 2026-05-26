@@ -23,7 +23,7 @@ Observed result:
 - Production build completes successfully.
 
 Current test coverage covers the scaffold, local storage implementation, and
-workspace service.
+workspace and document services.
 
 ## Implemented So Far
 
@@ -41,8 +41,10 @@ Current implementation:
   - `build`
   - `test`
 - Electron entry points exist under `electron/`.
-- The app renders a placeholder three-pane layout.
-- Electron exposes a preload API for opening a workspace folder.
+- The app renders a three-pane layout with a workspace file list and selected
+  document editor.
+- Electron exposes preload APIs for opening a workspace folder and reading a
+  selected Markdown document.
 
 Relevant files:
 
@@ -62,8 +64,10 @@ Notes:
 
 - `README.md` still says the project is in `MVP Planning`, but the scaffold has
   already been created.
-- The current UI can request a workspace folder and display Markdown document
-  paths, but editor and preview content are still static placeholders.
+- The current UI can request a workspace folder, display Markdown document
+  paths, and load selected document content into the editor.
+- The preview pane currently mirrors selected document content as plain text;
+  full Markdown rendering remains a later MVP step.
 
 ### 2. Core Domain Types
 
@@ -171,6 +175,32 @@ Remaining work:
 
 - Store or restore the last workspace if it remains simple in the desktop shell.
 
+### 6. Three-Pane Layout
+
+Status: partially complete.
+
+Current implementation:
+
+- The file pane can open a workspace through Electron and list Markdown files.
+- Selecting a listed file reads it through the preload IPC boundary.
+- The editor pane displays the selected document content in a textarea.
+- The preview pane mirrors the selected document content as plain text for now.
+
+Relevant files:
+
+```text
+electron/main.cjs
+electron/preload.cjs
+src/types/electron.d.ts
+src/components/layout/WorkspaceView.tsx
+src/styles/global.css
+```
+
+Remaining work:
+
+- Replace the plain-text preview with a Markdown rendering library in step 9.
+- Add explicit save behavior in step 8.
+
 ## Not Implemented Yet
 
 The following `docs/TASK.md` steps are not implemented yet:
@@ -184,38 +214,38 @@ The following `docs/TASK.md` steps are not implemented yet:
 - `13. MVP Hardening`
 
 `6. Three-Pane Layout` is partially implemented. The file pane can display
-workspace document paths after opening a folder, while editor and preview remain
-static placeholders.
+workspace document paths after opening a folder, and the editor can load selected
+document content. The preview is still plain text rather than rendered Markdown.
 
 ## Current Code Shape
 
 The following service files still contain empty classes:
 
 ```text
-src/services/DocumentService.ts
 src/services/LinkService.ts
 src/services/TagService.ts
 src/services/ThemeService.ts
 ```
 
-The current layout can open a workspace folder through the Electron preload API
-and display Markdown document paths:
+`DocumentService` now delegates document reads and saves to the storage layer.
+
+The current layout can open a workspace folder through the Electron preload API,
+display Markdown document paths, and load selected document content:
 
 ```text
 src/components/layout/WorkspaceView.tsx
 ```
 
-Editor and preview content remain static placeholders. UI components do not
-currently read or write files directly, which is consistent with the architecture
-boundary described in `docs/ARCHITECTURE.md`.
+The preview pane is intentionally plain text until the Markdown rendering step.
+UI components do not currently read or write files directly, which is consistent
+with the architecture boundary described in `docs/ARCHITECTURE.md`.
 
 ## Recommended Next Step
 
-Continue with the remaining parts of `docs/TASK.md` step 5, then step 6:
+Continue with `docs/TASK.md` step 8:
 
-1. Decide whether to persist and restore the last workspace.
-2. Replace the remaining static editor and preview placeholders with selected
-   document state.
+1. Add explicit save behavior for edited Markdown content.
+2. Handle document switching with unsaved changes predictably.
 3. Keep UI components behind preload/application service APIs rather than direct
    file-system access.
 

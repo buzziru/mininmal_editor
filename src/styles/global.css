@@ -120,9 +120,21 @@ textarea {
 }
 
 .file-list-item:hover,
-.file-list-item:focus-visible {
+.file-list-item:focus-visible,
+.file-list-item.is-selected {
   background: #eef1ed;
   outline: none;
+}
+
+.empty-state,
+.editor-empty-state {
+  color: var(--color-muted);
+}
+
+.empty-state {
+  margin: var(--space-2) var(--space-3);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .editor-input {
@@ -137,10 +149,25 @@ textarea {
   outline: none;
 }
 
+.editor-empty-state {
+  padding: var(--space-4);
+  line-height: 1.5;
+}
+
 .preview-content {
   overflow: auto;
   padding: var(--space-4);
   line-height: 1.6;
+}
+
+.preview-plain-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
 }
 
 .preview-content h1 {
