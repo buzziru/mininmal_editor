@@ -70,6 +70,7 @@ app.whenReady().then(() => {
     }
 
     const filePath = resolveWorkspaceDocumentPath(activeWorkspaceRoot, documentPath);
+    await fs.stat(filePath);
     await fs.writeFile(filePath, content, "utf8");
 
     const fileStats = await fs.stat(filePath);
@@ -80,6 +81,65 @@ app.whenReady().then(() => {
       content,
       createdAt: fileStats.birthtime.toISOString(),
       updatedAt: fileStats.mtime.toISOString(),
+    };
+  });
+
+  ipcMain.handle("document:create", async (_event, documentPath) => {
+    if (!activeWorkspaceRoot) {
+      throw new Error("No workspace is open.");
+    }
+
+    const normalizedPath = normalizeDocumentInputPath(documentPath);
+    const filePath = resolveWorkspaceDocumentPath(activeWorkspaceRoot, normalizedPath);
+
+    await ensureDocumentDoesNotExist(filePath, normalizedPath);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, "", { encoding: "utf8", flag: "wx" });
+
+    const document = await readMarkdownDocument(activeWorkspaceRoot, filePath);
+
+    return {
+      document,
+      documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
+    };
+  });
+
+  ipcMain.handle("document:rename", async (_event, currentPath, nextPath) => {
+    if (!activeWorkspaceRoot) {
+      throw new Error("No workspace is open.");
+    }
+
+    const normalizedNextPath = normalizeDocumentInputPath(nextPath);
+    const currentFilePath = resolveWorkspaceDocumentPath(activeWorkspaceRoot, currentPath);
+    const nextFilePath = resolveWorkspaceDocumentPath(activeWorkspaceRoot, normalizedNextPath);
+
+    if (currentFilePath === nextFilePath) {
+      return {
+        document: await readMarkdownDocument(activeWorkspaceRoot, currentFilePath),
+        documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
+      };
+    }
+
+    await ensureDocumentDoesNotExist(nextFilePath, normalizedNextPath);
+    await fs.mkdir(path.dirname(nextFilePath), { recursive: true });
+    await fs.rename(currentFilePath, nextFilePath);
+
+    return {
+      document: await readMarkdownDocument(activeWorkspaceRoot, nextFilePath),
+      documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
+    };
+  });
+
+  ipcMain.handle("document:delete", async (_event, documentPath) => {
+    if (!activeWorkspaceRoot) {
+      throw new Error("No workspace is open.");
+    }
+
+    const filePath = resolveWorkspaceDocumentPath(activeWorkspaceRoot, documentPath);
+    await fs.unlink(filePath);
+
+    return {
+      documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
     };
   });
 
@@ -125,6 +185,46 @@ const listMarkdownDocuments = async (workspaceRoot, directoryPath) => {
   }
 
   return documents.sort((left, right) => left.path.localeCompare(right.path));
+};
+
+const readMarkdownDocument = async (workspaceRoot, filePath) => {
+  const [content, fileStats] = await Promise.all([fs.readFile(filePath, "utf8"), fs.stat(filePath)]);
+
+  return {
+    path: toDocumentPath(workspaceRoot, filePath),
+    title: getDocumentTitle(content, filePath),
+    content,
+    createdAt: fileStats.birthtime.toISOString(),
+    updatedAt: fileStats.mtime.toISOString(),
+  };
+};
+
+const normalizeDocumentInputPath = (documentPath) => {
+  if (typeof documentPath !== "string") {
+    throw new Error("Document path must be text.");
+  }
+
+  const trimmedPath = documentPath.trim().replaceAll("\\", "/");
+
+  if (!trimmedPath) {
+    throw new Error("Document path is required.");
+  }
+
+  return path.posix.extname(trimmedPath) ? trimmedPath : `${trimmedPath}.md`;
+};
+
+const ensureDocumentDoesNotExist = async (filePath, documentPath) => {
+  try {
+    await fs.stat(filePath);
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      return;
+    }
+
+    throw error;
+  }
+
+  throw new Error(`Document already exists: ${documentPath}`);
 };
 
 const resolveWorkspaceDocumentPath = (workspaceRoot, documentPath) => {

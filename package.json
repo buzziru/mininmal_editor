@@ -6,22 +6,27 @@
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "node scripts/dev.cjs",
     "desktop": "electron .",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run"
+    "test": "vitest run src",
+    "test:unit": "vitest run src",
+    "test:e2e": "playwright test",
+    "dev:renderer": "vite --host 127.0.0.1"
   },
   "dependencies": {
+    "electron": "^42.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "electron": "^42.2.0"
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.0.0",
+    "@playwright/test": "^1.60.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
     "typescript": "^5.8.0",
     "vite": "^7.0.0",
     "vitest": "^3.0.0"

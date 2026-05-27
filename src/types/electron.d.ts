@@ -11,6 +11,15 @@ export type ReadDocumentResult = Omit<Document, "createdAt" | "updatedAt"> & {
   updatedAt?: string;
 };
 
+export interface DocumentMutationResult {
+  document: ReadDocumentResult;
+  documents: OpenWorkspaceResult["documents"];
+}
+
+export interface DeleteDocumentResult {
+  documents: OpenWorkspaceResult["documents"];
+}
+
 declare global {
   interface Window {
     markdownEditor?: {
@@ -18,6 +27,9 @@ declare global {
       openWorkspace: () => Promise<OpenWorkspaceResult | null>;
       readDocument: (documentPath: string) => Promise<ReadDocumentResult>;
       writeDocument: (documentPath: string, content: string) => Promise<ReadDocumentResult>;
+      createDocument: (documentPath: string) => Promise<DocumentMutationResult>;
+      renameDocument: (currentPath: string, nextPath: string) => Promise<DocumentMutationResult>;
+      deleteDocument: (documentPath: string) => Promise<DeleteDocumentResult>;
     };
   }
 }

@@ -7,9 +7,28 @@
   --color-muted: #5f6763;
   --color-accent: #2f6f68;
   --color-danger: #9a3412;
+  --color-action-hover: #eef1ed;
+  --color-code-background: #eef1ed;
+  --color-code-block-background: #f3f4f1;
+  --color-tag-background: #e5efec;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-background: #181c1a;
+  --color-surface: #202623;
+  --color-border: #38413d;
+  --color-text: #eef2ee;
+  --color-muted: #aab4ae;
+  --color-accent: #79b8ad;
+  --color-danger: #f0a37f;
+  --color-action-hover: #2a332f;
+  --color-code-background: #2a332f;
+  --color-code-block-background: #1a201d;
+  --color-tag-background: #243b36;
 }
 
 * {
@@ -79,8 +98,34 @@ textarea {
 
 .pane-action:hover,
 .pane-action:focus-visible {
-  background: #eef1ed;
+  background: var(--color-action-hover);
   outline: none;
+}
+
+.pane-action:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.danger-action {
+  color: var(--color-danger);
+}
+
+.file-header-actions,
+.file-actions,
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.file-actions {
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.save-status {
+  color: var(--color-muted);
+  font-size: 0.75rem;
 }
 
 .workspace-path,
@@ -122,7 +167,7 @@ textarea {
 .file-list-item:hover,
 .file-list-item:focus-visible,
 .file-list-item.is-selected {
-  background: #eef1ed;
+  background: var(--color-action-hover);
   outline: none;
 }
 
@@ -160,14 +205,12 @@ textarea {
   line-height: 1.6;
 }
 
-.preview-plain-text {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family:
-    Consolas,
-    "Courier New",
-    monospace;
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
 }
 
 .preview-content h1 {
@@ -175,8 +218,59 @@ textarea {
   font-size: 1.5rem;
 }
 
+.preview-content h2 {
+  font-size: 1.25rem;
+}
+
+.preview-content h3 {
+  font-size: 1.125rem;
+}
+
+.preview-content p,
+.preview-content ul,
+.preview-content ol,
+.preview-content pre {
+  margin: 0 0 var(--space-4);
+}
+
 .preview-content a {
   color: var(--color-accent);
+}
+
+.preview-content a.internal-link {
+  font-weight: 600;
+  text-decoration-style: dotted;
+}
+
+.preview-content a.internal-link[aria-invalid="true"] {
+  color: var(--color-danger);
+}
+
+.preview-content code,
+.preview-content pre {
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+}
+
+.preview-content code {
+  border-radius: 4px;
+  padding: 0.125rem 0.25rem;
+  background: var(--color-code-background);
+}
+
+.preview-content pre {
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: var(--space-3);
+  background: var(--color-code-block-background);
+}
+
+.preview-content pre code {
+  padding: 0;
+  background: transparent;
 }
 
 .tag-chip {
@@ -185,6 +279,6 @@ textarea {
   border-radius: 6px;
   padding: 0.125rem 0.5rem;
   color: var(--color-accent);
-  background: #e5efec;
+  background: var(--color-tag-background);
   font-size: 0.875rem;
 }

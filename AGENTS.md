@@ -171,13 +171,15 @@ Update relevant documents when behavior or structure changes.
 
 Examples:
 
-| Change         | Update                 |
-| -------------- | ---------------------- |
-| feature scope  | `docs/MVP_SPEC.md`     |
-| architecture   | `docs/ARCHITECTURE.md` |
-| data structure | `docs/DATA_MODEL.md`   |
-| UI conventions | `docs/STYLE_GUIDE.md`  |
-| task progress  | `docs/TASK.md`         |
+| Change            | Update                 |
+| ----------------- | ---------------------- |
+| feature scope     | `docs/MVP_SPEC.md`     |
+| architecture      | `docs/ARCHITECTURE.md` |
+| data structure    | `docs/DATA_MODEL.md`   |
+| UI conventions    | `docs/STYLE_GUIDE.md`  |
+| testing strategy  | `docs/TESTING.md`      |
+| task progress     | `docs/TASK.md`         |
+
 
 Do not allow implementation and documentation to diverge.
 

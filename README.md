@@ -111,8 +111,10 @@ README.md
 현재 상태:
 
 ```text
-MVP Planning
+MVP Implementation (in progress)
 ```
+
+진행 상황과 다음 작업은 `docs/CURRENT_STATUS.md`와 `docs/TASK.md`(각 단계의 Assigned Agent)를 참고하세요.
 
 우선적으로 다음 사항들을 안정화하는 것을 목표로 합니다.
 
@@ -145,7 +147,23 @@ docs/ARCHITECTURE.md
 
 # 시작하기
 
-초기 프로젝트 세팅 이후 실행 방법과 개발 환경 구성 방법을 추가할 예정입니다.
+개발 중 전체 데스크톱 앱을 실행하려면:
+
+```text
+npm run dev
+```
+
+이 명령은 Vite 개발 서버를 시작한 뒤 Electron 창을 열어 로컬 파일 열기,
+편집, 저장 기능까지 확인할 수 있게 합니다.
+
+렌더러 UI만 브라우저에서 확인하려면:
+
+```text
+npm run dev:renderer
+```
+
+브라우저 단독 실행에서는 Electron preload API가 없으므로 로컬 파일 열기,
+편집, 저장 기능은 동작하지 않습니다.
 
 ---
 

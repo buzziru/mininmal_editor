@@ -48,6 +48,8 @@ The MVP is complete when a user can:
 
 ### 1. Project Scaffold
 
+Assigned Agent: scaffold
+
 Goal: Create the minimal app shell and development setup.
 
 Scope:
@@ -71,6 +73,8 @@ Review focus:
 
 ### 2. Core Domain Types
 
+Assigned Agent: domain
+
 Goal: Define the shared data model used by services and UI.
 
 Scope:
@@ -92,6 +96,8 @@ Review focus:
 
 ### 3. Storage Provider Contract
 
+Assigned Agent: storage
+
 Goal: Establish the storage boundary before adding UI behavior.
 
 Scope:
@@ -112,6 +118,8 @@ Review focus:
 - The abstraction is minimal and not a plugin system.
 
 ### 4. Local File Storage
+
+Assigned Agent: storage
 
 Goal: Implement local `.md` file operations safely.
 
@@ -137,6 +145,8 @@ Review focus:
 
 ### 5. Workspace Service
 
+Assigned Agent: services
+
 Goal: Manage the current workspace without leaking storage details to UI.
 
 Scope:
@@ -158,6 +168,8 @@ Review focus:
 
 ### 6. Three-Pane Layout
 
+Assigned Agent: ui-layout
+
 Goal: Build the fixed MVP interface shape.
 
 Scope:
@@ -178,6 +190,8 @@ Review focus:
 - No floating panels, docking, or mobile layout work is introduced.
 
 ### 7. File Explorer UI
+
+Assigned Agent: ui-explorer
 
 Goal: Let users browse and select Markdown files.
 
@@ -201,6 +215,8 @@ Review focus:
 
 ### 8. Document Editing And Saving
 
+Assigned Agent: ui-editor
+
 Goal: Provide a reliable Markdown editing loop.
 
 Scope:
@@ -223,6 +239,8 @@ Review focus:
 
 ### 9. Markdown Preview
 
+Assigned Agent: markdown
+
 Goal: Render supported Markdown syntax in the preview pane.
 
 Scope:
@@ -244,6 +262,8 @@ Review focus:
 
 ### 10. Theme Support
 
+Assigned Agent: ui-theme
+
 Goal: Add light and dark themes.
 
 Scope:
@@ -264,6 +284,8 @@ Review focus:
 - No custom theme editor or marketplace concepts.
 
 ### 11. Internal Link Parsing And Navigation
+
+Assigned Agent: links
 
 Goal: Support basic `[[Document Name]]` links.
 
@@ -287,6 +309,8 @@ Review focus:
 
 ### 12. Tag Extraction
 
+Assigned Agent: tags
+
 Goal: Extract basic `#tag` values from the current document.
 
 Scope:
@@ -305,6 +329,8 @@ Review focus:
 - No tag pages, tag search, tag hierarchy, or graph.
 
 ### 13. MVP Hardening
+
+Assigned Agent: polish
 
 Goal: Close reliability gaps before considering the MVP complete.
 

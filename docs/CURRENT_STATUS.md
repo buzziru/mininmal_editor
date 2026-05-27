@@ -18,19 +18,21 @@ Use this table to delegate work. Full step details live in `docs/TASK.md`.
 | 4 | Local File Storage | storage | mostly complete |
 | 5 | Workspace Service | services | partially complete |
 | 6 | Three-Pane Layout | ui-layout | partially complete |
-| 7 | File Explorer UI | ui-explorer | not started |
+| 7 | File Explorer UI | ui-explorer | mostly complete |
 | 8 | Document Editing And Saving | ui-editor | mostly complete |
-| 9 | Markdown Preview | markdown | not started |
-| 10 | Theme Support | ui-theme | not started |
-| 11 | Internal Link Parsing And Navigation | links | not started |
-| 12 | Tag Extraction | tags | not started |
-| 13 | MVP Hardening | polish | not started |
+| 9 | Markdown Preview | markdown | mostly complete |
+| 10 | Theme Support | ui-theme | mostly complete |
+| 11 | Internal Link Parsing And Navigation | links | mostly complete |
+| 12 | Tag Extraction | tags | mostly complete |
+| 13 | MVP Hardening | polish | mostly complete |
 
 ## Verification Commands
 
 The following commands were run successfully:
 
 ```text
+npm run dev
+npm run dev:renderer
 npm run typecheck
 npm test
 npm run build
@@ -38,8 +40,10 @@ npm run build
 
 Observed result:
 
+- `npm run dev` opens the Electron app with preload-backed file operations.
+- `npm run dev:renderer` opens the browser-only renderer for UI checks.
 - TypeScript type checking passes.
-- Vitest runs and passes.
+- Vitest runs and passes for the app source tests under `src/`.
 - Production build completes successfully.
 
 Current test coverage covers the scaffold, local storage implementation, and
@@ -58,6 +62,7 @@ Current implementation:
 - React, TypeScript, Vite, and Electron are configured.
 - Scripts exist in `package.json`:
   - `dev`
+  - `dev:renderer`
   - `desktop`
   - `typecheck`
   - `build`
@@ -67,6 +72,9 @@ Current implementation:
   document editor.
 - Electron exposes preload APIs for opening a workspace folder and reading a
   selected Markdown document.
+- `npm run dev` starts the Vite renderer server and opens the Electron window.
+  Browser-only renderer checks can use `npm run dev:renderer`, but file
+  operations require Electron.
 
 Relevant files:
 
@@ -87,9 +95,11 @@ Notes:
 - `README.md` development stage now matches this document (`MVP Implementation`).
 - The current UI can request a workspace folder, display Markdown document
   paths, and load selected document content into the editor.
+- The current UI can create, rename, and delete Markdown documents from the
+  file pane.
 - The current UI can explicitly save edits to the selected Markdown document.
-- The preview pane currently mirrors selected document content as plain text;
-  full Markdown rendering remains a later MVP step.
+- The preview pane renders selected document content as Markdown.
+- The current UI can switch between light and dark themes.
 
 ### 2. Core Domain Types
 
@@ -217,7 +227,37 @@ Current implementation:
 - Selecting a listed file reads it through the preload IPC boundary.
 - The editor pane displays the selected document content in a textarea.
 - The editor pane tracks unsaved changes and exposes an explicit save action.
-- The preview pane mirrors the selected document content as plain text for now.
+- The preview pane renders selected document content with a Markdown rendering
+  library.
+
+Relevant files:
+
+```text
+electron/main.cjs
+electron/preload.cjs
+src/types/electron.d.ts
+src/components/layout/WorkspaceView.tsx
+src/styles/global.css
+```
+
+### 7. File Explorer UI
+
+Assigned Agent: ui-explorer
+
+Status: mostly complete.
+
+Current implementation:
+
+- The file pane lists Markdown documents from the selected workspace.
+- Users can select Markdown files to load them into the editor.
+- Users can create Markdown files by entering a workspace-relative file path.
+- Users can rename the selected Markdown file without overwriting an existing
+  file.
+- Users can delete the selected Markdown file only after explicit confirmation.
+- File create, rename, and delete actions go through the Electron preload IPC
+  boundary.
+- The Electron main process validates workspace-relative `.md` paths and keeps
+  file operations inside the active workspace.
 
 Relevant files:
 
@@ -231,7 +271,8 @@ src/styles/global.css
 
 Remaining work:
 
-- Replace the plain-text preview with a Markdown rendering library in step 9.
+- Manual desktop smoke test should confirm create, rename, and delete update
+  normal `.md` files on disk.
 
 ### 8. Document Editing And Saving
 
@@ -266,31 +307,71 @@ Remaining work:
 - Manual desktop smoke test should confirm edits persist to disk through the
   Electron window.
 
-## Not Implemented Yet
+### 9. Markdown Preview
 
-The following `docs/TASK.md` steps are not implemented yet:
+Assigned Agent: markdown
 
-- `7. File Explorer UI` — Assigned Agent: ui-explorer
-- `9. Markdown Preview` — Assigned Agent: markdown
-- `10. Theme Support` — Assigned Agent: ui-theme
-- `11. Internal Link Parsing And Navigation` — Assigned Agent: links
-- `12. Tag Extraction` — Assigned Agent: tags
-- `13. MVP Hardening` — Assigned Agent: polish
+Status: mostly complete.
 
-`6. Three-Pane Layout` is partially implemented. The file pane can display
-workspace document paths after opening a folder, and the editor can load selected
-document content. The preview is still plain text rather than rendered Markdown.
+Current implementation:
 
-## Current Code Shape
+- The preview pane uses `react-markdown`.
+- Preview updates from the current editor content.
+- Basic Markdown syntax renders through the library, including headings,
+  paragraphs, lists, inline code, code blocks, bold, italic, and links.
+- Raw embedded HTML is not enabled.
 
-The following service files still contain empty classes (see Assigned Agent when
-implementing the matching `docs/TASK.md` step):
+Relevant files:
 
 ```text
-src/services/LinkService.ts   → links (step 11)
-src/services/TagService.ts    → tags (step 12)
-src/services/ThemeService.ts  → ui-theme (step 10)
+package.json
+package-lock.json
+src/components/layout/WorkspaceView.tsx
+src/styles/global.css
 ```
+
+Remaining work:
+
+- Manual UI smoke test should confirm preview rendering in the Electron window.
+
+### 10. Theme Support
+
+Assigned Agent: ui-theme
+
+Status: mostly complete.
+
+Current implementation:
+
+- The app supports light and dark CSS variable themes.
+- The preview pane header includes a theme toggle.
+- The selected theme is persisted in local storage.
+- `ThemeService` handles initial theme selection, toggling, and persistence.
+
+Relevant files:
+
+```text
+src/models/Theme.ts
+src/services/ThemeService.ts
+src/services/ThemeService.test.ts
+src/components/layout/WorkspaceView.tsx
+src/styles/global.css
+```
+
+Remaining work:
+
+- Manual UI smoke test should confirm theme switching and persistence in the
+  Electron window.
+
+## Not Implemented Yet
+
+No numbered MVP implementation step from `docs/TASK.md` is currently marked as
+not started.
+
+`6. Three-Pane Layout` is partially implemented. The file pane can display
+workspace document paths after opening a folder, the editor can load selected
+document content, and the preview renders Markdown.
+
+## Current Code Shape
 
 `DocumentService` now delegates document reads and saves to the storage layer.
 
@@ -301,18 +382,114 @@ display Markdown document paths, and load selected document content:
 src/components/layout/WorkspaceView.tsx
 ```
 
-The preview pane is intentionally plain text until the Markdown rendering step.
+The preview pane now uses `react-markdown` for Markdown rendering.
 UI components do not currently read or write files directly, which is consistent
 with the architecture boundary described in `docs/ARCHITECTURE.md`.
 
+### 11. Internal Link Parsing And Navigation
+
+Assigned Agent: links
+
+Status: mostly complete.
+
+Current implementation:
+
+- `LinkService` parses basic `[[Document Name]]` internal links.
+- Link targets resolve against current workspace document titles, paths, or paths
+  without the `.md` extension.
+- The preview pane renders internal links as clickable Markdown links.
+- Clicking a resolved internal link loads the matching document.
+- Missing links are styled as unresolved and show a clear error when clicked.
+- Missing links do not create files automatically.
+
+Relevant files:
+
+```text
+src/services/LinkService.ts
+src/services/LinkService.test.ts
+src/components/layout/WorkspaceView.tsx
+src/styles/global.css
+```
+
+Remaining work:
+
+- Manual UI smoke test should confirm internal link navigation in the Electron
+  window with real workspace files.
+
+### 12. Tag Extraction
+
+Assigned Agent: tags
+
+Status: mostly complete.
+
+Current implementation:
+
+- `TagService` extracts basic `#tag`, `#daily-note`, and `#project_2026` values
+  from the current document content.
+- Duplicate tags are displayed once, preserving first-seen order.
+- The parser avoids Markdown headings such as `# Heading`, inline fragments such
+  as `example.com/#section`, and language names such as `C#`.
+- The preview pane displays tags for the currently selected document only.
+- No tag pages, tag search, tag hierarchy, or tag index has been added.
+
+Relevant files:
+
+```text
+src/services/TagService.ts
+src/services/TagService.test.ts
+src/components/layout/WorkspaceView.tsx
+src/styles/global.css
+```
+
+Remaining work:
+
+- Manual UI smoke test should confirm tag chips update while editing real
+  workspace files in the Electron window.
+
+### 13. MVP Hardening
+
+Assigned Agent: polish
+
+Status: mostly complete.
+
+Current implementation:
+
+- `npm run dev` now starts the Vite renderer server and opens the Electron app,
+  so file operations can be tested with the preload API available.
+- The Electron write path checks that the selected Markdown file still exists
+  before saving, aligning it with `LocalFileStorage.writeDocument` and avoiding
+  accidental file recreation after external deletion.
+- Manual smoke testing confirmed opening a folder, selecting a `.md` file,
+  editing content, live preview rendering, saving, and theme switching.
+- `npm run dev:renderer` remains available for browser-only UI checks where file
+  operations are not expected to work.
+
+Relevant files:
+
+```text
+scripts/dev.cjs
+electron/main.cjs
+package.json
+README.md
+docs/CURRENT_STATUS.md
+```
+
+Remaining work:
+
+- Continue adding focused regression tests only when new hardening issues are
+  found.
+- Optional: persist and restore the last workspace if it remains simple and does
+  not add hidden file-system behavior.
+
 ## Recommended Next Step
 
-Continue with `docs/TASK.md` step 7. **Assigned Agent: ui-explorer**
+Continue with targeted hardening only as issues are discovered.
 
-1. Add create, rename, and delete actions for Markdown files.
-2. Require explicit confirmation before delete.
-3. Keep UI components behind preload/application service APIs rather than direct
-   file-system access.
+1. Prefer small fixes tied to a reproduced issue.
+2. Add a focused regression test when the issue is covered by service or storage
+   code.
+3. Keep manual Electron smoke testing for preload, file dialog, and desktop-only
+   behavior.
 
 Keep the implementation local-first and MVP-only. Do not add a database, search
 index, plugin system, cloud sync, graph features, or advanced Markdown renderer.
