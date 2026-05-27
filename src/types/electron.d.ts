@@ -6,6 +6,10 @@ export interface OpenWorkspaceResult {
   documents: Array<Omit<DocumentMetadata, "updatedAt"> & { updatedAt?: string }>;
 }
 
+export type OpenDocumentResult = OpenWorkspaceResult & {
+  document: ReadDocumentResult;
+};
+
 export type ReadDocumentResult = Omit<Document, "createdAt" | "updatedAt"> & {
   createdAt?: string;
   updatedAt?: string;
@@ -25,11 +29,15 @@ declare global {
     markdownEditor?: {
       platform: NodeJS.Platform;
       openWorkspace: () => Promise<OpenWorkspaceResult | null>;
+      openDocument: () => Promise<OpenDocumentResult | null>;
       readDocument: (documentPath: string) => Promise<ReadDocumentResult>;
       writeDocument: (documentPath: string, content: string) => Promise<ReadDocumentResult>;
       createDocument: (documentPath: string) => Promise<DocumentMutationResult>;
       renameDocument: (currentPath: string, nextPath: string) => Promise<DocumentMutationResult>;
       deleteDocument: (documentPath: string) => Promise<DeleteDocumentResult>;
+      onOpenWorkspaceRequested: (callback: () => void) => () => void;
+      onOpenDocumentRequested: (callback: () => void) => () => void;
+      onSaveDocumentRequested: (callback: () => void) => () => void;
     };
   }
 }

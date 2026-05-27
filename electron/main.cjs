@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, dialog, ipcMain } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -15,6 +15,12 @@ const createWindow = () => {
     },
   });
 
+  mainWindow.webContents.on("before-input-event", (_event, input) => {
+    if (input.key === "Escape" && mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(false);
+    }
+  });
+
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     return;
@@ -24,24 +30,10 @@ const createWindow = () => {
 };
 
 app.whenReady().then(() => {
-  ipcMain.handle("workspace:open", async () => {
-    const result = await dialog.showOpenDialog({
-      properties: ["openDirectory"],
-      title: "Open Markdown Workspace",
-    });
+  Menu.setApplicationMenu(createApplicationMenu());
 
-    if (result.canceled || result.filePaths.length === 0) {
-      return null;
-    }
-
-    const rootPath = result.filePaths[0];
-    activeWorkspaceRoot = path.resolve(rootPath);
-
-    return {
-      workspace: { rootPath: activeWorkspaceRoot },
-      documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
-    };
-  });
+  ipcMain.handle("workspace:open", openWorkspaceDialog);
+  ipcMain.handle("document:open", openDocumentDialog);
 
   ipcMain.handle("document:read", async (_event, documentPath) => {
     if (!activeWorkspaceRoot) {
@@ -186,6 +178,106 @@ const listMarkdownDocuments = async (workspaceRoot, directoryPath) => {
 
   return documents.sort((left, right) => left.path.localeCompare(right.path));
 };
+
+const openWorkspaceDialog = async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
+    title: "Open Markdown Workspace",
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return null;
+  }
+
+  return openWorkspaceRoot(result.filePaths[0]);
+};
+
+const openDocumentDialog = async () => {
+  const result = await dialog.showOpenDialog({
+    filters: [{ name: "Markdown Documents", extensions: ["md"] }],
+    properties: ["openFile"],
+    title: "Open Markdown File",
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return null;
+  }
+
+  const filePath = path.resolve(result.filePaths[0]);
+
+  if (path.extname(filePath).toLowerCase() !== ".md") {
+    throw new Error(`Only .md documents are supported: ${filePath}`);
+  }
+
+  activeWorkspaceRoot = path.dirname(filePath);
+
+  return {
+    workspace: { rootPath: activeWorkspaceRoot },
+    documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
+    document: await readMarkdownDocument(activeWorkspaceRoot, filePath),
+  };
+};
+
+const openWorkspaceRoot = async (rootPath) => {
+  activeWorkspaceRoot = path.resolve(rootPath);
+
+  return {
+    workspace: { rootPath: activeWorkspaceRoot },
+    documents: await listMarkdownDocuments(activeWorkspaceRoot, activeWorkspaceRoot),
+  };
+};
+
+const createApplicationMenu = () =>
+  Menu.buildFromTemplate([
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "Open Folder...",
+          accelerator: "CmdOrCtrl+O",
+          click: (_menuItem, browserWindow) => {
+            browserWindow?.webContents.send("menu:open-workspace");
+          },
+        },
+        {
+          label: "Open File...",
+          accelerator: "CmdOrCtrl+Shift+O",
+          click: (_menuItem, browserWindow) => {
+            browserWindow?.webContents.send("menu:open-document");
+          },
+        },
+        {
+          label: "Save",
+          accelerator: "CmdOrCtrl+S",
+          click: (_menuItem, browserWindow) => {
+            browserWindow?.webContents.send("menu:save-document");
+          },
+        },
+        { type: "separator" },
+        {
+          label: "Exit",
+          role: process.platform === "darwin" ? "close" : "quit",
+        },
+      ],
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { type: "separator" },
+        { role: "selectAll" },
+      ],
+    },
+    {
+      label: "View",
+      submenu: [{ role: "togglefullscreen" }],
+    },
+  ]);
 
 const readMarkdownDocument = async (workspaceRoot, filePath) => {
   const [content, fileStats] = await Promise.all([fs.readFile(filePath, "utf8"), fs.stat(filePath)]);

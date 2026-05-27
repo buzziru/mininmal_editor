@@ -354,6 +354,52 @@ Review focus:
 - Fix only MVP reliability issues.
 - Avoid broad refactors at this stage.
 
+### 14. Post-MVP QA Stabilization
+
+Assigned Agent: polish
+
+Goal: Stabilize the completed MVP against the manual QA findings recorded in
+`docs/CURRENT_STATUS.md`.
+
+Scope:
+
+- Fix workspace folder opening so contained `.md` files are displayed in the
+  file pane.
+- Fix `New` so it creates a Markdown file through the existing storage and
+  Electron preload boundaries.
+- Fix `Rename` so it renames the selected Markdown file without overwriting an
+  existing file.
+- Add a way to exit fullscreen after toggling it on, with `Esc` returning to the
+  normal layout.
+- Add support for opening an individual `.md` file, while keeping workspace
+  folder selection as the primary MVP workflow.
+- Expand the File menu to include:
+  - `Open Folder...`
+  - `Open File...`
+  - `Exit`
+
+Verify:
+
+- `npm run typecheck` passes.
+- `npm test` passes.
+- `npm run build` passes.
+- Manual Electron QA confirms:
+  - `Open Folder...` lists contained Markdown files.
+  - `Open File...` opens a selected `.md` file.
+  - `New` creates a Markdown file and refreshes the file list.
+  - `Rename` updates the selected file and refreshes the file list.
+  - Fullscreen can be exited with `Esc`.
+  - Existing edit, save, preview, theme, link, and tag behavior still works.
+
+Review focus:
+
+- Keep fixes tied directly to reproduced QA issues.
+- Preserve the UI, service, and storage boundaries.
+- Avoid introducing non-MVP features such as multi-workspace management, search,
+  file watching, or advanced menu systems.
+- Add focused regression tests where the issue can be covered outside manual
+  Electron behavior.
+
 ## Explicitly Out Of Scope For MVP
 
 The following features must not be implemented during the MVP unless explicitly

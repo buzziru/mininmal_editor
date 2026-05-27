@@ -10,6 +10,7 @@ import { TagService } from "../../services/TagService";
 import { ThemeService } from "../../services/ThemeService";
 
 const sampleDocuments = ["notes.md", "projects.md", "ideas/startup.md"];
+type FileFormMode = "create" | "rename";
 
 export function WorkspaceView() {
   const themeService = useMemo(() => new ThemeService(window.localStorage), []);
@@ -21,6 +22,9 @@ export function WorkspaceView() {
   const [selectedDocument, setSelectedDocument] = useState<Document>();
   const [documentContent, setDocumentContent] = useState("");
   const [errorMessage, setErrorMessage] = useState<string>();
+  const [fileFormMode, setFileFormMode] = useState<FileFormMode>();
+  const [newDocumentPath, setNewDocumentPath] = useState("untitled.md");
+  const [renameDocumentPath, setRenameDocumentPath] = useState("");
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [isSavingDocument, setIsSavingDocument] = useState(false);
   const hasUnsavedChanges = selectedDocument ? documentContent !== selectedDocument.content : false;
@@ -61,18 +65,45 @@ export function WorkspaceView() {
       }
 
       setWorkspace(result.workspace);
-      setSelectedDocument(undefined);
-      setDocumentContent("");
 
       const nextDocuments = hydrateDocuments(result.documents);
 
       setDocuments(nextDocuments);
+      setSelectedDocument(undefined);
+      setDocumentContent("");
+      setFileFormMode(undefined);
 
       if (nextDocuments[0]) {
-        await loadDocument(nextDocuments[0].path, { skipUnsavedCheck: true });
+        await loadDocument(nextDocuments[0].path, { forceReload: true, skipUnsavedCheck: true });
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to open workspace.");
+    }
+  };
+
+  const openDocument = async (): Promise<void> => {
+    if (!canDiscardUnsavedChanges()) {
+      return;
+    }
+
+    setErrorMessage(undefined);
+
+    try {
+      const result = await window.markdownEditor?.openDocument();
+
+      if (!result) {
+        return;
+      }
+
+      const nextDocument = hydrateDocument(result.document);
+
+      setWorkspace(result.workspace);
+      setDocuments(hydrateDocuments(result.documents));
+      setSelectedDocument(nextDocument);
+      setDocumentContent(nextDocument.content);
+      setFileFormMode(undefined);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to open document.");
     }
   };
 
@@ -82,9 +113,9 @@ export function WorkspaceView() {
 
   const loadDocument = async (
     documentPath: string,
-    options: { skipUnsavedCheck?: boolean } = {},
+    options: { forceReload?: boolean; skipUnsavedCheck?: boolean } = {},
   ): Promise<void> => {
-    if (documentPath === selectedDocument?.path) {
+    if (!options.forceReload && documentPath === selectedDocument?.path) {
       return;
     }
 
@@ -106,6 +137,7 @@ export function WorkspaceView() {
 
       setSelectedDocument(nextDocument);
       setDocumentContent(nextDocument.content);
+      setFileFormMode(undefined);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to read document.");
     } finally {
@@ -150,21 +182,21 @@ export function WorkspaceView() {
     }
   };
 
-  const createDocument = async (): Promise<void> => {
+  const createDocument = async (documentPath: string): Promise<void> => {
     if (!workspace || !canDiscardUnsavedChanges()) {
       return;
     }
 
-    const documentPath = window.prompt("New Markdown file path", "untitled.md");
+    const requestedPath = documentPath.trim();
 
-    if (!documentPath) {
+    if (!requestedPath) {
       return;
     }
 
     setErrorMessage(undefined);
 
     try {
-      const result = await window.markdownEditor?.createDocument(documentPath);
+      const result = await window.markdownEditor?.createDocument(requestedPath);
 
       if (!result) {
         throw new Error("Unable to create document.");
@@ -175,26 +207,28 @@ export function WorkspaceView() {
       setDocuments(hydrateDocuments(result.documents));
       setSelectedDocument(nextDocument);
       setDocumentContent(nextDocument.content);
+      setNewDocumentPath("untitled.md");
+      setFileFormMode(undefined);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create document.");
     }
   };
 
-  const renameDocument = async (): Promise<void> => {
+  const renameDocument = async (nextPath: string): Promise<void> => {
     if (!selectedDocument || !canDiscardUnsavedChanges()) {
       return;
     }
 
-    const nextPath = window.prompt("Rename Markdown file", selectedDocument.path);
+    const requestedPath = nextPath.trim();
 
-    if (!nextPath || nextPath === selectedDocument.path) {
+    if (!requestedPath || requestedPath === selectedDocument.path) {
       return;
     }
 
     setErrorMessage(undefined);
 
     try {
-      const result = await window.markdownEditor?.renameDocument(selectedDocument.path, nextPath);
+      const result = await window.markdownEditor?.renameDocument(selectedDocument.path, requestedPath);
 
       if (!result) {
         throw new Error("Unable to rename document.");
@@ -205,8 +239,21 @@ export function WorkspaceView() {
       setDocuments(hydrateDocuments(result.documents));
       setSelectedDocument(nextDocument);
       setDocumentContent(nextDocument.content);
+      setRenameDocumentPath(nextDocument.path);
+      setFileFormMode(undefined);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to rename document.");
+    }
+  };
+
+  const submitFileForm = (): void => {
+    if (fileFormMode === "create") {
+      void createDocument(newDocumentPath);
+      return;
+    }
+
+    if (fileFormMode === "rename") {
+      void renameDocument(renameDocumentPath);
     }
   };
 
@@ -233,9 +280,10 @@ export function WorkspaceView() {
       setDocuments(nextDocuments);
       setSelectedDocument(undefined);
       setDocumentContent("");
+      setFileFormMode(undefined);
 
       if (nextDocuments[0]) {
-        await loadDocument(nextDocuments[0].path, { skipUnsavedCheck: true });
+        await loadDocument(nextDocuments[0].path, { forceReload: true, skipUnsavedCheck: true });
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to delete document.");
@@ -270,6 +318,24 @@ export function WorkspaceView() {
     void openInternalLink(href);
   };
 
+  useEffect(() => {
+    const removeOpenWorkspaceListener = window.markdownEditor?.onOpenWorkspaceRequested(() => {
+      void openWorkspace();
+    });
+    const removeOpenDocumentListener = window.markdownEditor?.onOpenDocumentRequested(() => {
+      void openDocument();
+    });
+    const removeSaveDocumentListener = window.markdownEditor?.onSaveDocumentRequested(() => {
+      void saveDocument();
+    });
+
+    return () => {
+      removeOpenWorkspaceListener?.();
+      removeOpenDocumentListener?.();
+      removeSaveDocumentListener?.();
+    };
+  });
+
   return (
     <main className="workspace-shell" aria-label="Markdown editor workspace">
       <aside className="pane file-pane" aria-label="File list">
@@ -284,7 +350,7 @@ export function WorkspaceView() {
               className="pane-action"
               disabled={!workspace}
               onClick={() => {
-                void createDocument();
+                setFileFormMode("create");
               }}
             >
               New
@@ -299,7 +365,10 @@ export function WorkspaceView() {
               className="pane-action"
               disabled={!selectedDocument}
               onClick={() => {
-                void renameDocument();
+                if (selectedDocument) {
+                  setRenameDocumentPath(selectedDocument.path);
+                }
+                setFileFormMode("rename");
               }}
             >
               Rename
@@ -315,6 +384,44 @@ export function WorkspaceView() {
               Delete
             </button>
           </div>
+        ) : null}
+        {workspace && fileFormMode ? (
+          <form
+            className="file-edit-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitFileForm();
+            }}
+          >
+            <input
+              className="file-path-input"
+              value={fileFormMode === "create" ? newDocumentPath : renameDocumentPath}
+              aria-label={fileFormMode === "create" ? "New Markdown file path" : "Renamed Markdown file path"}
+              autoFocus
+              onChange={(event) => {
+                if (fileFormMode === "create") {
+                  setNewDocumentPath(event.target.value);
+                  return;
+                }
+
+                setRenameDocumentPath(event.target.value);
+              }}
+            />
+            <div className="file-form-actions">
+              <button type="submit" className="pane-action">
+                {fileFormMode === "create" ? "Create" : "Apply"}
+              </button>
+              <button
+                type="button"
+                className="pane-action"
+                onClick={() => {
+                  setFileFormMode(undefined);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         ) : null}
         {errorMessage ? <p className="error-message">{errorMessage}</p> : null}
         <nav className="file-list" aria-label="Markdown files">

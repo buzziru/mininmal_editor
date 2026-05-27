@@ -48,6 +48,7 @@ body {
 }
 
 button,
+input,
 textarea {
   font: inherit;
 }
@@ -121,6 +122,32 @@ textarea {
 
 .file-actions {
   padding: var(--space-3) var(--space-4) 0;
+}
+
+.file-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.file-path-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.375rem 0.5rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.file-path-input:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.file-form-actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .save-status {
