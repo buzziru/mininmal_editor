@@ -150,6 +150,31 @@ Avoid:
 
 ---
 
+## Definition of Done
+
+Before marking a task complete:
+
+1. Confirm the work stays within the MVP scope or was explicitly requested.
+2. Run the relevant static checks:
+   * `npm run typecheck`
+   * `npm test`
+   * `npm run build`
+3. For renderer-only behavior, verify with `npm run dev:renderer` only when the
+   behavior does not depend on Electron APIs.
+4. For file operations, native menus, preload IPC, fullscreen behavior, or disk
+   persistence, verify manually with `npm run dev`.
+5. Run the Electron manual smoke checklist in `docs/TESTING.md` when the change
+   affects workspace, file, editor, preview, theme, link, tag, menu, or
+   fullscreen behavior.
+6. Update relevant documentation when behavior, scope, architecture, data shape,
+   UI convention, or testing guidance changes.
+
+Passing typecheck, tests, and build is not sufficient for Electron-only
+behavior. Any behavior that depends on the desktop shell must be verified in the
+Electron app.
+
+---
+
 ## When Making Structural Changes
 
 Before major architectural modifications:
