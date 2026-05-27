@@ -60,6 +60,29 @@ app.whenReady().then(() => {
     };
   });
 
+  ipcMain.handle("document:write", async (_event, documentPath, content) => {
+    if (!activeWorkspaceRoot) {
+      throw new Error("No workspace is open.");
+    }
+
+    if (typeof content !== "string") {
+      throw new Error("Document content must be text.");
+    }
+
+    const filePath = resolveWorkspaceDocumentPath(activeWorkspaceRoot, documentPath);
+    await fs.writeFile(filePath, content, "utf8");
+
+    const fileStats = await fs.stat(filePath);
+
+    return {
+      path: toDocumentPath(activeWorkspaceRoot, filePath),
+      title: getDocumentTitle(content, filePath),
+      content,
+      createdAt: fileStats.birthtime.toISOString(),
+      updatedAt: fileStats.mtime.toISOString(),
+    };
+  });
+
   createWindow();
 
   app.on("activate", () => {

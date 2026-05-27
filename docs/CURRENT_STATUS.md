@@ -1,10 +1,30 @@
 # Current Project Status
 
-Last checked: 2026-05-26
+Last checked: 2026-05-27
 
 This document summarizes the current implementation state so another session can
 quickly continue from the same point. It reflects the repository state checked
-against `docs/TASK.md`.
+against `docs/TASK.md`, including each step's **Assigned Agent** from that plan.
+
+## Task Step And Agent Mapping
+
+Use this table to delegate work. Full step details live in `docs/TASK.md`.
+
+| Step | Task area | Assigned Agent | Status (summary) |
+| ---- | --------- | -------------- | ---------------- |
+| 1 | Project Scaffold | scaffold | mostly complete |
+| 2 | Core Domain Types | domain | mostly complete |
+| 3 | Storage Provider Contract | storage | mostly complete |
+| 4 | Local File Storage | storage | mostly complete |
+| 5 | Workspace Service | services | partially complete |
+| 6 | Three-Pane Layout | ui-layout | partially complete |
+| 7 | File Explorer UI | ui-explorer | not started |
+| 8 | Document Editing And Saving | ui-editor | mostly complete |
+| 9 | Markdown Preview | markdown | not started |
+| 10 | Theme Support | ui-theme | not started |
+| 11 | Internal Link Parsing And Navigation | links | not started |
+| 12 | Tag Extraction | tags | not started |
+| 13 | MVP Hardening | polish | not started |
 
 ## Verification Commands
 
@@ -28,6 +48,8 @@ workspace and document services.
 ## Implemented So Far
 
 ### 1. Project Scaffold
+
+Assigned Agent: scaffold
 
 Status: mostly complete.
 
@@ -62,14 +84,16 @@ src/styles/global.css
 
 Notes:
 
-- `README.md` still says the project is in `MVP Planning`, but the scaffold has
-  already been created.
+- `README.md` development stage now matches this document (`MVP Implementation`).
 - The current UI can request a workspace folder, display Markdown document
   paths, and load selected document content into the editor.
+- The current UI can explicitly save edits to the selected Markdown document.
 - The preview pane currently mirrors selected document content as plain text;
   full Markdown rendering remains a later MVP step.
 
 ### 2. Core Domain Types
+
+Assigned Agent: domain
 
 Status: mostly complete.
 
@@ -98,6 +122,8 @@ Notes:
 - No database, graph, sync, or search-specific model has been introduced.
 
 ### 3. Storage Provider Contract
+
+Assigned Agent: storage
 
 Status: mostly complete.
 
@@ -130,6 +156,8 @@ Remaining work:
 
 ### 4. Local File Storage
 
+Assigned Agent: storage
+
 Status: mostly complete.
 
 Current implementation:
@@ -155,6 +183,8 @@ Remaining work:
 
 ### 5. Workspace Service
 
+Assigned Agent: services
+
 Status: partially complete.
 
 Current implementation:
@@ -177,6 +207,8 @@ Remaining work:
 
 ### 6. Three-Pane Layout
 
+Assigned Agent: ui-layout
+
 Status: partially complete.
 
 Current implementation:
@@ -184,6 +216,7 @@ Current implementation:
 - The file pane can open a workspace through Electron and list Markdown files.
 - Selecting a listed file reads it through the preload IPC boundary.
 - The editor pane displays the selected document content in a textarea.
+- The editor pane tracks unsaved changes and exposes an explicit save action.
 - The preview pane mirrors the selected document content as plain text for now.
 
 Relevant files:
@@ -199,19 +232,50 @@ src/styles/global.css
 Remaining work:
 
 - Replace the plain-text preview with a Markdown rendering library in step 9.
-- Add explicit save behavior in step 8.
+
+### 8. Document Editing And Saving
+
+Assigned Agent: ui-editor
+
+Status: mostly complete.
+
+Current implementation:
+
+- The editor textarea tracks unsaved changes against the last loaded or saved
+  document content.
+- The editor header shows `Saved`, `Unsaved`, or `Saving...` status.
+- A `Save` button writes the selected Markdown document through the Electron
+  preload IPC boundary.
+- The Electron main process validates workspace-relative `.md` paths before
+  writing UTF-8 content.
+- Switching documents or opening a different workspace asks before discarding
+  unsaved changes.
+
+Relevant files:
+
+```text
+electron/main.cjs
+electron/preload.cjs
+src/types/electron.d.ts
+src/components/layout/WorkspaceView.tsx
+src/styles/global.css
+```
+
+Remaining work:
+
+- Manual desktop smoke test should confirm edits persist to disk through the
+  Electron window.
 
 ## Not Implemented Yet
 
 The following `docs/TASK.md` steps are not implemented yet:
 
-- `7. File Explorer UI`
-- `8. Document Editing And Saving`
-- `9. Markdown Preview`
-- `10. Theme Support`
-- `11. Internal Link Parsing And Navigation`
-- `12. Tag Extraction`
-- `13. MVP Hardening`
+- `7. File Explorer UI` — Assigned Agent: ui-explorer
+- `9. Markdown Preview` — Assigned Agent: markdown
+- `10. Theme Support` — Assigned Agent: ui-theme
+- `11. Internal Link Parsing And Navigation` — Assigned Agent: links
+- `12. Tag Extraction` — Assigned Agent: tags
+- `13. MVP Hardening` — Assigned Agent: polish
 
 `6. Three-Pane Layout` is partially implemented. The file pane can display
 workspace document paths after opening a folder, and the editor can load selected
@@ -219,12 +283,13 @@ document content. The preview is still plain text rather than rendered Markdown.
 
 ## Current Code Shape
 
-The following service files still contain empty classes:
+The following service files still contain empty classes (see Assigned Agent when
+implementing the matching `docs/TASK.md` step):
 
 ```text
-src/services/LinkService.ts
-src/services/TagService.ts
-src/services/ThemeService.ts
+src/services/LinkService.ts   → links (step 11)
+src/services/TagService.ts    → tags (step 12)
+src/services/ThemeService.ts  → ui-theme (step 10)
 ```
 
 `DocumentService` now delegates document reads and saves to the storage layer.
@@ -242,10 +307,10 @@ with the architecture boundary described in `docs/ARCHITECTURE.md`.
 
 ## Recommended Next Step
 
-Continue with `docs/TASK.md` step 8:
+Continue with `docs/TASK.md` step 7. **Assigned Agent: ui-explorer**
 
-1. Add explicit save behavior for edited Markdown content.
-2. Handle document switching with unsaved changes predictably.
+1. Add create, rename, and delete actions for Markdown files.
+2. Require explicit confirmation before delete.
 3. Keep UI components behind preload/application service APIs rather than direct
    file-system access.
 

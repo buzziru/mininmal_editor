@@ -12,9 +12,18 @@ export function WorkspaceView() {
   const [documentContent, setDocumentContent] = useState("");
   const [errorMessage, setErrorMessage] = useState<string>();
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
+  const [isSavingDocument, setIsSavingDocument] = useState(false);
+  const hasUnsavedChanges = selectedDocument ? documentContent !== selectedDocument.content : false;
+  const editorTitle = selectedDocument
+    ? `${selectedDocument.title}${hasUnsavedChanges ? " *" : ""}`
+    : "Editor";
   const visibleDocuments = workspace ? documents.map((document) => document.path) : sampleDocuments;
 
   const openWorkspace = async (): Promise<void> => {
+    if (!canDiscardUnsavedChanges()) {
+      return;
+    }
+
     setErrorMessage(undefined);
 
     try {
@@ -36,14 +45,29 @@ export function WorkspaceView() {
       setDocuments(nextDocuments);
 
       if (nextDocuments[0]) {
-        await loadDocument(nextDocuments[0].path);
+        await loadDocument(nextDocuments[0].path, { skipUnsavedCheck: true });
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to open workspace.");
     }
   };
 
-  const loadDocument = async (documentPath: string): Promise<void> => {
+  const canDiscardUnsavedChanges = (): boolean => {
+    return !hasUnsavedChanges || window.confirm("Discard unsaved changes?");
+  };
+
+  const loadDocument = async (
+    documentPath: string,
+    options: { skipUnsavedCheck?: boolean } = {},
+  ): Promise<void> => {
+    if (documentPath === selectedDocument?.path) {
+      return;
+    }
+
+    if (!options.skipUnsavedCheck && !canDiscardUnsavedChanges()) {
+      return;
+    }
+
     setErrorMessage(undefined);
     setIsLoadingDocument(true);
 
@@ -66,6 +90,47 @@ export function WorkspaceView() {
       setErrorMessage(error instanceof Error ? error.message : "Unable to read document.");
     } finally {
       setIsLoadingDocument(false);
+    }
+  };
+
+  const saveDocument = async (): Promise<void> => {
+    if (!selectedDocument || !hasUnsavedChanges) {
+      return;
+    }
+
+    setErrorMessage(undefined);
+    setIsSavingDocument(true);
+
+    try {
+      const result = await window.markdownEditor?.writeDocument(selectedDocument.path, documentContent);
+
+      if (!result) {
+        throw new Error("Unable to save document.");
+      }
+
+      const savedDocument: Document = {
+        ...result,
+        createdAt: result.createdAt ? new Date(result.createdAt) : undefined,
+        updatedAt: result.updatedAt ? new Date(result.updatedAt) : undefined,
+      };
+
+      setSelectedDocument(savedDocument);
+      setDocumentContent(savedDocument.content);
+      setDocuments((currentDocuments) =>
+        currentDocuments.map((document) =>
+          document.path === savedDocument.path
+            ? {
+                ...document,
+                title: savedDocument.title,
+                updatedAt: savedDocument.updatedAt,
+              }
+            : document,
+        ),
+      );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to save document.");
+    } finally {
+      setIsSavingDocument(false);
     }
   };
 
@@ -103,13 +168,31 @@ export function WorkspaceView() {
 
       <section className="pane editor-pane" aria-label="Markdown editor">
         <header className="pane-header">
-          <h2>{selectedDocument ? selectedDocument.title : "Editor"}</h2>
+          <h2>{editorTitle}</h2>
+          {selectedDocument ? (
+            <div className="editor-actions">
+              <span className="save-status" aria-live="polite">
+                {isSavingDocument ? "Saving..." : hasUnsavedChanges ? "Unsaved" : "Saved"}
+              </span>
+              <button
+                type="button"
+                className="pane-action"
+                disabled={!hasUnsavedChanges || isSavingDocument}
+                onClick={() => {
+                  void saveDocument();
+                }}
+              >
+                Save
+              </button>
+            </div>
+          ) : null}
         </header>
         {selectedDocument ? (
           <textarea
             className="editor-input"
             value={documentContent}
             spellCheck="false"
+            readOnly={isSavingDocument}
             aria-label="Markdown content"
             onChange={(event) => {
               setDocumentContent(event.target.value);

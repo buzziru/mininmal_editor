@@ -17,6 +17,7 @@ declare global {
       platform: NodeJS.Platform;
       openWorkspace: () => Promise<OpenWorkspaceResult | null>;
       readDocument: (documentPath: string) => Promise<ReadDocumentResult>;
+      writeDocument: (documentPath: string, content: string) => Promise<ReadDocumentResult>;
     };
   }
 }
