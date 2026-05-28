@@ -94,7 +94,20 @@ docs/
 ├── ARCHITECTURE.md
 ├── DATA_MODEL.md
 ├── STYLE_GUIDE.md
-└── TASK.md
+├── TESTING.md
+├── CURRENT_STATUS.md
+├── TASK.md
+├── roadmap/
+│   ├── PHASE_1_MVP.md
+│   ├── PHASE_2_QA.md
+│   └── PHASE_3_GOOGLE_DRIVE_SYNC.md
+├── qa/
+│   ├── QA_LOG.md
+│   └── REGRESSION_CASES.md
+└── sync/
+    ├── GOOGLE_DRIVE_ARCHITECTURE.md
+    ├── AUTH_FLOW.md
+    └── SYNC_EDGE_CASES.md
 ```
 
 프로젝트 루트 문서:
@@ -111,12 +124,16 @@ README.md
 현재 상태:
 
 ```text
-MVP Implementation (in progress)
+MVP and post-MVP QA stabilization complete
 ```
 
-진행 상황과 다음 작업은 `docs/CURRENT_STATUS.md`와 `docs/TASK.md`(각 단계의 Assigned Agent)를 참고하세요.
+현재 상태와 다음 작업은 `docs/CURRENT_STATUS.md`와 `docs/TASK.md`를
+참고하세요. 완료된 단계별 계획은 `docs/roadmap/`, QA 추적은
+`docs/qa/`, 향후 Google Drive 동기화 계획 경계는 `docs/sync/`에서
+관리합니다.
 
-우선적으로 다음 사항들을 안정화하는 것을 목표로 합니다.
+현재는 다음 기준을 유지하면서 구체적으로 재현된 이슈에 한해
+targeted hardening을 진행합니다.
 
 * 프로젝트 구조
 * 저장 구조

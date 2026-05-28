@@ -27,6 +27,8 @@ docs/MVP_SPEC.md
 docs/ARCHITECTURE.md
 docs/DATA_MODEL.md
 docs/STYLE_GUIDE.md
+docs/TESTING.md
+docs/CURRENT_STATUS.md
 docs/TASK.md
 ```
 
@@ -196,14 +198,18 @@ Update relevant documents when behavior or structure changes.
 
 Examples:
 
-| Change            | Update                 |
-| ----------------- | ---------------------- |
-| feature scope     | `docs/MVP_SPEC.md`     |
-| architecture      | `docs/ARCHITECTURE.md` |
-| data structure    | `docs/DATA_MODEL.md`   |
-| UI conventions    | `docs/STYLE_GUIDE.md`  |
-| testing strategy  | `docs/TESTING.md`      |
-| task progress     | `docs/TASK.md`         |
+| Change               | Update                                      |
+| -------------------- | ------------------------------------------- |
+| feature scope        | `docs/MVP_SPEC.md`                          |
+| architecture         | `docs/ARCHITECTURE.md`                      |
+| data structure       | `docs/DATA_MODEL.md`                        |
+| UI conventions       | `docs/STYLE_GUIDE.md`                       |
+| testing strategy     | `docs/TESTING.md`                           |
+| active task/status   | `docs/TASK.md`, `docs/CURRENT_STATUS.md`    |
+| reproduced QA issue  | `docs/qa/QA_LOG.md`                         |
+| regression coverage  | `docs/qa/REGRESSION_CASES.md`               |
+| completed phase plan | `docs/roadmap/`                             |
+| future sync planning | `docs/sync/`                                |
 
 
 Do not allow implementation and documentation to diverge.
