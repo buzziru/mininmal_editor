@@ -55,9 +55,15 @@ UI는 다음 방향을 따른다.
 기본 레이아웃:
 
 ```text
-| File List | Editor | Preview |
+| Activity Bar | File Side Panel | Editor | Preview |
 
 ```
+
+The activity bar stays visible on the far left and contains icon buttons for
+workspace views. The Explorer button toggles the file side panel open or closed.
+The file side panel width and the editor/preview split may be adjusted with
+vertical resize handles. When the file side panel is closed, the editor and
+preview panes expand to use the available workspace width.
 
 ---
 

@@ -37,7 +37,7 @@
 
 body {
   margin: 0;
-  min-width: 900px;
+  min-width: 960px;
   min-height: 600px;
   color: var(--color-text);
   background: var(--color-background);
@@ -55,20 +55,126 @@ textarea {
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(360px, 1fr) minmax(320px, 0.9fr);
+  width: 100vw;
+  grid-template-columns: 48px minmax(0, 1fr);
   min-height: 100vh;
+  overflow: hidden;
+}
+
+.activity-bar {
+  display: flex;
+  min-width: 48px;
+  align-items: center;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  padding: var(--space-2) 0;
+  background: var(--color-surface);
+}
+
+.activity-bar-button {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  color: var(--color-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.activity-bar-button:hover,
+.activity-bar-button:focus-visible,
+.activity-bar-button[aria-pressed="true"] {
+  color: var(--color-text);
+  background: var(--color-action-hover);
+  outline: none;
+}
+
+.activity-bar-button[aria-pressed="true"] {
+  border-left-color: var(--color-accent);
+}
+
+.activity-bar-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.workspace-layout {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .pane {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  border-right: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
-.pane:last-child {
+.file-pane {
+  flex: 0 0 260px;
+  min-width: 220px;
+  max-width: 420px;
   border-right: 0;
+}
+
+.editor-pane {
+  flex: 1 1 0;
+  min-width: 360px;
+  border-left: 1px solid var(--color-border);
+}
+
+.preview-pane {
+  flex: 1 1 0;
+  min-width: 320px;
+}
+
+.file-panel-resizer,
+.editor-preview-resizer {
+  position: relative;
+  flex: 0 0 6px;
+  background: var(--color-surface);
+  cursor: col-resize;
+}
+
+.file-panel-resizer::before,
+.editor-preview-resizer::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+  background: var(--color-border);
+  content: "";
+}
+
+.file-panel-resizer:hover::before,
+.file-panel-resizer:focus-visible::before,
+.editor-preview-resizer:hover::before,
+.editor-preview-resizer:focus-visible::before,
+.workspace-layout.is-resizing-file-panel .file-panel-resizer::before,
+.workspace-layout.is-resizing-editor-pane .editor-preview-resizer::before {
+  background: var(--color-accent);
+}
+
+.file-panel-resizer:focus-visible,
+.editor-preview-resizer:focus-visible {
+  outline: none;
+}
+
+.workspace-layout.is-resizing-file-panel,
+.workspace-layout.is-resizing-editor-pane {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .pane-header {

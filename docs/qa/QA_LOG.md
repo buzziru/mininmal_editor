@@ -13,6 +13,7 @@ No open QA findings are currently documented.
 
 | Finding | Outcome | Regression reference |
 | ------- | ------- | -------------------- |
+| Resizable panes could leave ghost whitespace on the right side of the workspace. | Resolved; the pane container now uses a full-width flex layout so hidden panels and resize operations redistribute width without unused space. | `docs/qa/REGRESSION_CASES.md` |
 | `Open Folder...` was needed from the File menu. | Resolved; menu command opens a workspace folder. | `docs/qa/REGRESSION_CASES.md` |
 | `Open File...` was needed from the File menu. | Resolved; menu command opens an individual `.md` file. | `docs/qa/REGRESSION_CASES.md` |
 | Workspace folder selection needed to list contained Markdown files. | Resolved; recursive `.md` listing is supported. | `docs/qa/REGRESSION_CASES.md` |

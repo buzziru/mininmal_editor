@@ -1,5 +1,5 @@
-import type { MouseEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import type { KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 import type { Document, DocumentMetadata } from "../../models/Document";
@@ -10,7 +10,18 @@ import { TagService } from "../../services/TagService";
 import { ThemeService } from "../../services/ThemeService";
 
 const sampleDocuments = ["notes.md", "projects.md", "ideas/startup.md"];
+const minFilePanelWidth = 220;
+const maxFilePanelWidth = 420;
+const defaultFilePanelWidth = 260;
+const minEditorPaneWidth = 360;
+const minPreviewPaneWidth = 320;
+const resizeHandleWidth = 6;
 type FileFormMode = "create" | "rename";
+
+type ResizeDragState = {
+  startX: number;
+  startWidth: number;
+};
 
 export function WorkspaceView() {
   const themeService = useMemo(() => new ThemeService(window.localStorage), []);
@@ -25,6 +36,15 @@ export function WorkspaceView() {
   const [fileFormMode, setFileFormMode] = useState<FileFormMode>();
   const [newDocumentPath, setNewDocumentPath] = useState("untitled.md");
   const [renameDocumentPath, setRenameDocumentPath] = useState("");
+  const [isFilePanelOpen, setIsFilePanelOpen] = useState(true);
+  const [filePanelWidth, setFilePanelWidth] = useState(defaultFilePanelWidth);
+  const [editorPaneWidth, setEditorPaneWidth] = useState<number>();
+  const [isResizingFilePanel, setIsResizingFilePanel] = useState(false);
+  const [isResizingEditorPane, setIsResizingEditorPane] = useState(false);
+  const fileResizeDragState = useRef<ResizeDragState | undefined>(undefined);
+  const editorResizeDragState = useRef<ResizeDragState | undefined>(undefined);
+  const workspaceLayoutRef = useRef<HTMLDivElement | null>(null);
+  const editorPaneRef = useRef<HTMLElement | null>(null);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [isSavingDocument, setIsSavingDocument] = useState(false);
   const hasUnsavedChanges = selectedDocument ? documentContent !== selectedDocument.content : false;
@@ -46,8 +66,141 @@ export function WorkspaceView() {
     themeService.saveTheme(theme);
   }, [theme, themeService]);
 
+  useEffect(() => {
+    if (!isResizingFilePanel) {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent): void => {
+      if (!fileResizeDragState.current) {
+        return;
+      }
+
+      const nextWidth =
+        fileResizeDragState.current.startWidth + event.clientX - fileResizeDragState.current.startX;
+
+      const clampedWidth = clampFilePanelWidth(nextWidth);
+
+      setFilePanelWidth(clampedWidth);
+      setEditorPaneWidth((currentWidth) =>
+        currentWidth ? clampEditorPaneWidth(currentWidth, clampedWidth) : currentWidth,
+      );
+    };
+
+    const stopResizing = (): void => {
+      fileResizeDragState.current = undefined;
+      setIsResizingFilePanel(false);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResizing);
+    window.addEventListener("pointercancel", stopResizing);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResizing);
+      window.removeEventListener("pointercancel", stopResizing);
+    };
+  }, [isResizingFilePanel]);
+
+  useEffect(() => {
+    if (!isResizingEditorPane) {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent): void => {
+      if (!editorResizeDragState.current) {
+        return;
+      }
+
+      const nextWidth =
+        editorResizeDragState.current.startWidth +
+        event.clientX -
+        editorResizeDragState.current.startX;
+
+      setEditorPaneWidth(clampEditorPaneWidth(nextWidth));
+    };
+
+    const stopResizing = (): void => {
+      editorResizeDragState.current = undefined;
+      setIsResizingEditorPane(false);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResizing);
+    window.addEventListener("pointercancel", stopResizing);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResizing);
+      window.removeEventListener("pointercancel", stopResizing);
+    };
+  }, [isResizingEditorPane]);
+
   const toggleTheme = (): void => {
     setTheme((currentTheme) => themeService.getNextTheme(currentTheme));
+  };
+
+  const startFilePanelResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    fileResizeDragState.current = {
+      startX: event.clientX,
+      startWidth: filePanelWidth,
+    };
+    setIsResizingFilePanel(true);
+  };
+
+  const resizeFilePanelWithKeyboard = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+
+    event.preventDefault();
+    setFilePanelWidth((currentWidth) => {
+      const nextWidth = clampFilePanelWidth(currentWidth + (event.key === "ArrowRight" ? 16 : -16));
+
+      setEditorPaneWidth((currentEditorWidth) =>
+        currentEditorWidth ? clampEditorPaneWidth(currentEditorWidth, nextWidth) : currentEditorWidth,
+      );
+
+      return nextWidth;
+    });
+  };
+
+  const clampEditorPaneWidth = (width: number, nextFilePanelWidth = filePanelWidth): number => {
+    const layoutWidth = workspaceLayoutRef.current?.getBoundingClientRect().width;
+    const fixedWidth = isFilePanelOpen
+      ? nextFilePanelWidth + resizeHandleWidth * 2
+      : resizeHandleWidth;
+    const maxEditorPaneWidth = layoutWidth
+      ? layoutWidth - fixedWidth - minPreviewPaneWidth
+      : width;
+
+    return Math.min(
+      Math.max(width, minEditorPaneWidth),
+      Math.max(minEditorPaneWidth, maxEditorPaneWidth),
+    );
+  };
+
+  const startEditorPaneResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    editorResizeDragState.current = {
+      startX: event.clientX,
+      startWidth: editorPaneRef.current?.getBoundingClientRect().width ?? minEditorPaneWidth,
+    };
+    setIsResizingEditorPane(true);
+  };
+
+  const resizeEditorPaneWithKeyboard = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+
+    event.preventDefault();
+    setEditorPaneWidth((currentWidth) =>
+      clampEditorPaneWidth(
+        (currentWidth ?? editorPaneRef.current?.getBoundingClientRect().width ?? minEditorPaneWidth) +
+          (event.key === "ArrowRight" ? 16 : -16),
+      ),
+    );
   };
 
   const openWorkspace = async (): Promise<void> => {
@@ -338,205 +491,288 @@ export function WorkspaceView() {
 
   return (
     <main className="workspace-shell" aria-label="Markdown editor workspace">
-      <aside className="pane file-pane" aria-label="File list">
-        <header className="pane-header">
-          <h1>Files</h1>
-          <div className="file-header-actions">
-            <button type="button" className="pane-action" onClick={openWorkspace}>
-              Open
-            </button>
-            <button
-              type="button"
-              className="pane-action"
-              disabled={!workspace}
-              onClick={() => {
-                setFileFormMode("create");
-              }}
-            >
-              New
-            </button>
-          </div>
-        </header>
-        {workspace ? <p className="workspace-path">{workspace.rootPath}</p> : null}
-        {workspace ? (
-          <div className="file-actions">
-            <button
-              type="button"
-              className="pane-action"
-              disabled={!selectedDocument}
-              onClick={() => {
-                if (selectedDocument) {
-                  setRenameDocumentPath(selectedDocument.path);
-                }
-                setFileFormMode("rename");
-              }}
-            >
-              Rename
-            </button>
-            <button
-              type="button"
-              className="pane-action danger-action"
-              disabled={!selectedDocument}
-              onClick={() => {
-                void deleteDocument();
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        ) : null}
-        {workspace && fileFormMode ? (
-          <form
-            className="file-edit-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitFileForm();
-            }}
-          >
-            <input
-              className="file-path-input"
-              value={fileFormMode === "create" ? newDocumentPath : renameDocumentPath}
-              aria-label={fileFormMode === "create" ? "New Markdown file path" : "Renamed Markdown file path"}
-              autoFocus
-              onChange={(event) => {
-                if (fileFormMode === "create") {
-                  setNewDocumentPath(event.target.value);
-                  return;
-                }
+      <nav className="activity-bar" aria-label="Workspace views">
+        <button
+          type="button"
+          className="activity-bar-button"
+          title="Explorer"
+          aria-label="Toggle file explorer"
+          aria-pressed={isFilePanelOpen}
+          aria-controls="file-side-panel"
+          onClick={() => {
+            setIsFilePanelOpen((currentValue) => !currentValue);
+          }}
+        >
+          <FolderIcon />
+        </button>
+      </nav>
 
-                setRenameDocumentPath(event.target.value);
+      <div
+        ref={workspaceLayoutRef}
+        className={
+          [
+            "workspace-layout",
+            isFilePanelOpen ? undefined : "file-panel-closed",
+            isResizingFilePanel ? "is-resizing-file-panel" : undefined,
+            isResizingEditorPane ? "is-resizing-editor-pane" : undefined,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        }
+      >
+        {isFilePanelOpen ? (
+          <aside
+            id="file-side-panel"
+            className="pane file-pane"
+            aria-label="File list"
+            style={{ flexBasis: filePanelWidth }}
+          >
+            <header className="pane-header">
+              <h1>Files</h1>
+              <div className="file-header-actions">
+                <button type="button" className="pane-action" onClick={openWorkspace}>
+                  Open
+                </button>
+                <button
+                  type="button"
+                  className="pane-action"
+                  disabled={!workspace}
+                  onClick={() => {
+                    setFileFormMode("create");
+                  }}
+                >
+                  New
+                </button>
+              </div>
+            </header>
+            {workspace ? <p className="workspace-path">{workspace.rootPath}</p> : null}
+            {workspace ? (
+              <div className="file-actions">
+                <button
+                  type="button"
+                  className="pane-action"
+                  disabled={!selectedDocument}
+                  onClick={() => {
+                    if (selectedDocument) {
+                      setRenameDocumentPath(selectedDocument.path);
+                    }
+                    setFileFormMode("rename");
+                  }}
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  className="pane-action danger-action"
+                  disabled={!selectedDocument}
+                  onClick={() => {
+                    void deleteDocument();
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ) : null}
+            {workspace && fileFormMode ? (
+              <form
+                className="file-edit-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitFileForm();
+                }}
+              >
+                <input
+                  className="file-path-input"
+                  value={fileFormMode === "create" ? newDocumentPath : renameDocumentPath}
+                  aria-label={fileFormMode === "create" ? "New Markdown file path" : "Renamed Markdown file path"}
+                  autoFocus
+                  onChange={(event) => {
+                    if (fileFormMode === "create") {
+                      setNewDocumentPath(event.target.value);
+                      return;
+                    }
+
+                    setRenameDocumentPath(event.target.value);
+                  }}
+                />
+                <div className="file-form-actions">
+                  <button type="submit" className="pane-action">
+                    {fileFormMode === "create" ? "Create" : "Apply"}
+                  </button>
+                  <button
+                    type="button"
+                    className="pane-action"
+                    onClick={() => {
+                      setFileFormMode(undefined);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : null}
+            {errorMessage ? <p className="error-message">{errorMessage}</p> : null}
+            <nav className="file-list" aria-label="Markdown files">
+              {visibleDocuments.map((documentPath) => (
+                <button
+                  key={documentPath}
+                  type="button"
+                  className={
+                    documentPath === selectedDocument?.path ? "file-list-item is-selected" : "file-list-item"
+                  }
+                  onClick={() => {
+                    void loadDocument(documentPath);
+                  }}
+                >
+                  {documentPath}
+                </button>
+              ))}
+              {workspace && visibleDocuments.length === 0 ? (
+                <p className="empty-state">No Markdown files found.</p>
+              ) : null}
+            </nav>
+          </aside>
+        ) : null}
+
+        {isFilePanelOpen ? (
+          <div
+            className="file-panel-resizer"
+            role="separator"
+            tabIndex={0}
+            aria-label="Resize file panel"
+            aria-orientation="vertical"
+            aria-valuemin={minFilePanelWidth}
+            aria-valuemax={maxFilePanelWidth}
+            aria-valuenow={filePanelWidth}
+            onPointerDown={startFilePanelResize}
+            onKeyDown={resizeFilePanelWithKeyboard}
+          />
+        ) : null}
+
+        <section
+          ref={editorPaneRef}
+          className="pane editor-pane"
+          aria-label="Markdown editor"
+          style={editorPaneWidth ? { flex: `0 0 ${editorPaneWidth}px` } : undefined}
+        >
+          <header className="pane-header">
+            <h2>{editorTitle}</h2>
+            {selectedDocument ? (
+              <div className="editor-actions">
+                <span className="save-status" aria-live="polite">
+                  {isSavingDocument ? "Saving..." : hasUnsavedChanges ? "Unsaved" : "Saved"}
+                </span>
+                <button
+                  type="button"
+                  className="pane-action"
+                  disabled={!hasUnsavedChanges || isSavingDocument}
+                  onClick={() => {
+                    void saveDocument();
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            ) : null}
+          </header>
+          {selectedDocument ? (
+            <textarea
+              className="editor-input"
+              value={documentContent}
+              spellCheck="false"
+              readOnly={isSavingDocument}
+              aria-label="Markdown content"
+              onChange={(event) => {
+                setDocumentContent(event.target.value);
               }}
             />
-            <div className="file-form-actions">
-              <button type="submit" className="pane-action">
-                {fileFormMode === "create" ? "Create" : "Apply"}
-              </button>
-              <button
-                type="button"
-                className="pane-action"
-                onClick={() => {
-                  setFileFormMode(undefined);
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : null}
-        {errorMessage ? <p className="error-message">{errorMessage}</p> : null}
-        <nav className="file-list" aria-label="Markdown files">
-          {visibleDocuments.map((documentPath) => (
-            <button
-              key={documentPath}
-              type="button"
-              className={
-                documentPath === selectedDocument?.path ? "file-list-item is-selected" : "file-list-item"
-              }
-              onClick={() => {
-                void loadDocument(documentPath);
-              }}
-            >
-              {documentPath}
-            </button>
-          ))}
-          {workspace && visibleDocuments.length === 0 ? (
-            <p className="empty-state">No Markdown files found.</p>
-          ) : null}
-        </nav>
-      </aside>
-
-      <section className="pane editor-pane" aria-label="Markdown editor">
-        <header className="pane-header">
-          <h2>{editorTitle}</h2>
-          {selectedDocument ? (
-            <div className="editor-actions">
-              <span className="save-status" aria-live="polite">
-                {isSavingDocument ? "Saving..." : hasUnsavedChanges ? "Unsaved" : "Saved"}
-              </span>
-              <button
-                type="button"
-                className="pane-action"
-                disabled={!hasUnsavedChanges || isSavingDocument}
-                onClick={() => {
-                  void saveDocument();
-                }}
-              >
-                Save
-              </button>
-            </div>
-          ) : null}
-        </header>
-        {selectedDocument ? (
-          <textarea
-            className="editor-input"
-            value={documentContent}
-            spellCheck="false"
-            readOnly={isSavingDocument}
-            aria-label="Markdown content"
-            onChange={(event) => {
-              setDocumentContent(event.target.value);
-            }}
-          />
-        ) : (
-          <div className="editor-empty-state">
-            {isLoadingDocument ? "Loading document..." : "Open a workspace and select a Markdown file."}
-          </div>
-        )}
-      </section>
-
-      <section className="pane preview-pane" aria-label="Markdown preview">
-        <header className="pane-header">
-          <h2>Preview</h2>
-          <button
-            type="button"
-            className="pane-action"
-            aria-pressed={theme === "dark"}
-            onClick={toggleTheme}
-          >
-            {theme === "light" ? "Dark" : "Light"}
-          </button>
-        </header>
-        {selectedDocument && currentTags.length > 0 ? (
-          <div className="tag-list" aria-label="Current document tags">
-            {currentTags.map((tag) => (
-              <span key={tag.name} className="tag-chip">
-                #{tag.name}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <article className="preview-content">
-          {selectedDocument ? (
-            <ReactMarkdown
-              components={{
-                a: ({ href, children }) => {
-                  const isInternalLink = href?.startsWith("#internal-link/");
-                  const isMissingInternalLink = href?.startsWith("#internal-link/missing/");
-
-                  return (
-                    <a
-                      href={href}
-                      className={isInternalLink ? "internal-link" : undefined}
-                      aria-invalid={isMissingInternalLink || undefined}
-                      title={isMissingInternalLink ? "Missing document" : undefined}
-                      onClick={(event) => {
-                        handlePreviewLinkClick(event, href);
-                      }}
-                    >
-                      {children}
-                    </a>
-                  );
-                },
-              }}
-            >
-              {previewContent}
-            </ReactMarkdown>
           ) : (
-            <p className="empty-state">Select a document to preview its content.</p>
+            <div className="editor-empty-state">
+              {isLoadingDocument ? "Loading document..." : "Open a workspace and select a Markdown file."}
+            </div>
           )}
-        </article>
-      </section>
+        </section>
+
+        <div
+          className="editor-preview-resizer"
+          role="separator"
+          tabIndex={0}
+          aria-label="Resize editor and preview panes"
+          aria-orientation="vertical"
+          aria-valuemin={minEditorPaneWidth}
+          aria-valuenow={Math.round(
+            editorPaneWidth ?? editorPaneRef.current?.getBoundingClientRect().width ?? minEditorPaneWidth,
+          )}
+          onPointerDown={startEditorPaneResize}
+          onKeyDown={resizeEditorPaneWithKeyboard}
+        />
+
+        <section className="pane preview-pane" aria-label="Markdown preview">
+          <header className="pane-header">
+            <h2>Preview</h2>
+            <button
+              type="button"
+              className="pane-action"
+              aria-pressed={theme === "dark"}
+              onClick={toggleTheme}
+            >
+              {theme === "light" ? "Dark" : "Light"}
+            </button>
+          </header>
+          {selectedDocument && currentTags.length > 0 ? (
+            <div className="tag-list" aria-label="Current document tags">
+              {currentTags.map((tag) => (
+                <span key={tag.name} className="tag-chip">
+                  #{tag.name}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          <article className="preview-content">
+            {selectedDocument ? (
+              <ReactMarkdown
+                components={{
+                  a: ({ href, children }) => {
+                    const isInternalLink = href?.startsWith("#internal-link/");
+                    const isMissingInternalLink = href?.startsWith("#internal-link/missing/");
+
+                    return (
+                      <a
+                        href={href}
+                        className={isInternalLink ? "internal-link" : undefined}
+                        aria-invalid={isMissingInternalLink || undefined}
+                        title={isMissingInternalLink ? "Missing document" : undefined}
+                        onClick={(event) => {
+                          handlePreviewLinkClick(event, href);
+                        }}
+                      >
+                        {children}
+                      </a>
+                    );
+                  },
+                }}
+              >
+                {previewContent}
+              </ReactMarkdown>
+            ) : (
+              <p className="empty-state">Select a document to preview its content.</p>
+            )}
+          </article>
+        </section>
+      </div>
     </main>
+  );
+}
+
+function clampFilePanelWidth(width: number): number {
+  return Math.min(Math.max(width, minFilePanelWidth), maxFilePanelWidth);
+}
+
+function FolderIcon() {
+  return (
+    <svg className="activity-bar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10l2 2h6.5A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-11Z" />
+    </svg>
   );
 }
 

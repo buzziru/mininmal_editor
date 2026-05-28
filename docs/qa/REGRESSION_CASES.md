@@ -31,6 +31,7 @@ These cases may require Electron when disk persistence is involved.
 | Case | Steps | Expected result |
 | ---- | ----- | --------------- |
 | Markdown preview updates | Edit Markdown headings, lists, code, and links. | Preview reflects supported syntax. |
+| Pane layout fills width | Toggle Explorer off, resize editor/preview, then toggle Explorer on. | Visible panes always fill the workspace width without right-side unused space. |
 | Theme persistence | Toggle theme, reload the app, and reopen the workspace. | Selected theme remains applied. |
 | Internal link navigation | Open a document containing `[[Existing Document]]` and click the link. | Matching document opens. |
 | Missing internal link | Open a document containing a missing `[[Document]]` link. | Missing state is clear and no file is created automatically. |

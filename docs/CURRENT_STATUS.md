@@ -17,7 +17,7 @@ not implemented and must not begin until explicitly requested.
 
 The application is a local-first Windows Markdown editor with:
 
-- three-pane layout: file list, editor, and preview
+- left activity bar with resizable file, editor, and preview panes
 - local workspace folder selection
 - individual `.md` file opening
 - recursive `.md` file listing
