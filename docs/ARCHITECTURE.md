@@ -546,6 +546,12 @@ AI Features
 
 ```
 
+Google Drive sync planning is documented separately under `docs/sync/`. That
+future work must preserve the UI, application service, and storage boundaries in
+this document. In the first planned sync implementation, local editing should
+continue to use local storage while a separate sync service compares local
+Markdown files with Drive files.
+
 ---
 
 # 19. Architectural Priorities

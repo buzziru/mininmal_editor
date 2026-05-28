@@ -92,3 +92,24 @@ Playwright E2E tests are optional during the MVP phase. Use them only for small,
 
 Do not repeatedly rerun failing Playwright tests without first isolating the issue with a minimal app-load test.
 Do not claim UI behavior was verified unless it was confirmed through manual testing or successful Playwright execution.
+
+## Future Google Drive Sync Verification
+
+Google Drive sync is planned but not implemented. When implementation begins,
+the verification checklist must expand before the feature is marked complete.
+
+Minimum planned sync checks:
+
+1. Connect a Google account.
+2. Disconnect the account.
+3. Map one local workspace to one Drive folder.
+4. Manually upload a local Markdown file.
+5. Manually download a remote Markdown file.
+6. Edit the same file locally and remotely, then confirm a conflict copy is
+   created without overwriting local content.
+7. Run sync without network access and confirm local editing still works.
+8. Revoke or expire auth and confirm the app shows a recoverable reconnect
+   path.
+9. Confirm tokens are not exposed to renderer code.
+10. Confirm sync metadata is stored outside Markdown files and outside the
+    workspace.

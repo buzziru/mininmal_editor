@@ -529,6 +529,33 @@ interface DocumentMetadata {
 
 ---
 
+## Future Sync Metadata Boundary
+
+Google Drive sync metadata is planned as app-managed state outside Markdown
+documents and outside the selected workspace. It must not be embedded in the
+Markdown file content.
+
+Examples of future app-managed sync state:
+
+```ts
+interface SyncWorkspaceConfig {
+  localWorkspaceRoot: string;
+  driveFolderId: string;
+  accountEmail?: string;
+}
+
+interface SyncFileState {
+  localPath: string;
+  driveFileId: string;
+  lastSyncedLocalMtimeMs?: number;
+  lastSyncedDriveModifiedTime?: string;
+  lastSyncedChecksum?: string;
+}
+```
+
+These structures are planning references only. They are not part of the current
+MVP data model until Google Drive sync is explicitly implemented.
+
 # 16. Search Model
 
 현재 MVP에서는 고급 검색 시스템을 구현하지 않는다.

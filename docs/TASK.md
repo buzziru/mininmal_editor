@@ -16,6 +16,9 @@ implementation task is currently active.
 
 No active implementation task is assigned.
 
+Google Drive sync planning is documented under `docs/sync/` and
+`docs/roadmap/PHASE_3_GOOGLE_DRIVE_SYNC.md`. Implementation is not active.
+
 When a concrete issue is reproduced or a new feature is explicitly requested,
 record only the active work here using this format:
 
@@ -37,7 +40,7 @@ Status:
 - Add durable regression coverage to `docs/qa/REGRESSION_CASES.md` when a fixed
   issue should be checked again.
 - Keep Google Drive sync as a future, explicitly requested post-MVP feature.
-  Planning placeholders live under `docs/sync/`.
+  The current planning documents live under `docs/sync/`.
 
 ## Archived Phase Plans
 

@@ -11,7 +11,8 @@ tracking lives in `docs/qa/`.
 Maintenance and targeted hardening.
 
 The MVP and post-MVP QA stabilization phases are complete. Google Drive sync is
-not implemented and must not begin until explicitly requested.
+planned as a post-MVP feature, but it is not implemented and must not begin
+unless explicitly assigned as active implementation work.
 
 ## Current Implementation Baseline
 
@@ -77,7 +78,8 @@ before implementing the fix.
 - Verify Electron-only behavior manually with `npm run dev`.
 - Update `docs/qa/QA_LOG.md`, `docs/qa/REGRESSION_CASES.md`, and
   `docs/TESTING.md` if QA coverage or verification guidance changes.
-- Use `docs/sync/` only as a future planning boundary for Google Drive sync.
+- Use `docs/sync/` as the planning source of truth before any Google Drive sync
+  implementation begins.
 
 ## Documentation Map
 
