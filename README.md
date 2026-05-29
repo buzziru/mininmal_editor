@@ -218,6 +218,7 @@ Electron preload API, native menu, 파일 다이얼로그, fullscreen, 디스크
 
 ## 주요 npm scripts
 
+
 | 명령                     | 용도                        |
 | ---------------------- | ------------------------- |
 | `npm run dev`          | Vite 개발 서버와 Electron 앱 실행 |
@@ -227,6 +228,7 @@ Electron preload API, native menu, 파일 다이얼로그, fullscreen, 디스크
 | `npm test`             | Vitest 기반 단위 테스트 실행       |
 | `npm run build`        | 타입 검사 후 프로덕션 빌드           |
 | `npm run test:e2e`     | Playwright E2E 테스트 실행     |
+
 
 ---
 
