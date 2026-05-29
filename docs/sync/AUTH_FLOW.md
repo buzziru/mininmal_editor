@@ -2,8 +2,7 @@
 
 Status: Planned, not implemented
 
-Authentication is required before Google Drive sync can be implemented. This
-document defines the intended auth boundary for the post-MVP sync feature.
+Authentication is required before Google Drive sync can be implemented. This document defines the intended auth boundary for the post-MVP sync feature.
 
 ## Goals
 
@@ -51,8 +50,7 @@ Preferred first storage approach:
 - encrypt token payloads with Electron `safeStorage` where available
 - keep token read/write code in Electron main only
 
-If distribution-level credential hardening becomes a requirement, evaluate a
-Windows Credential Manager/keytar-style store before release.
+If distribution-level credential hardening becomes a requirement, evaluate a Windows Credential Manager/keytar-style store before release.
 
 ## Scopes
 
@@ -64,9 +62,7 @@ Initial candidate:
 https://www.googleapis.com/auth/drive.file
 ```
 
-If the app must discover or manage files that it did not create or that were not
-explicitly selected by the user, a broader Drive scope may be required. That
-decision must be documented before implementation.
+If the app must discover or manage files that it did not create or that were not explicitly selected by the user, a broader Drive scope may be required. That decision must be documented before implementation.
 
 ## Exposed Renderer State
 
@@ -80,8 +76,7 @@ interface DriveConnectionStatus {
 }
 ```
 
-The renderer must never receive access tokens, refresh tokens, client secrets,
-or raw OAuth responses.
+The renderer must never receive access tokens, refresh tokens, client secrets, or raw OAuth responses.
 
 ## Disconnect Behavior
 
@@ -118,6 +113,49 @@ In all cases:
 - Disconnect removes stored credentials.
 - Revoked/expired tokens produce a recoverable error.
 - Local workspace editing still works after auth failure.
+
+## Google Cloud Console Setup Status
+
+Status: Prepared for development
+
+The Google Cloud Console setup required for the first OAuth implementation has been completed.
+
+Configured items:
+
+- Google Cloud project created.
+- Google Drive API enabled.
+- OAuth consent screen configured.
+- Publishing status set to Testing.
+- Development Google account added as a test user.
+- OAuth client created with application type `Desktop app`.
+- Initial OAuth scope selected:
+
+```text
+https://www.googleapis.com/auth/drive.file
+````
+
+* OAuth credential JSON downloaded and placed at:
+
+```text
+credentials/google-oauth.json
+```
+
+Security notes:
+
+* Do not commit `credentials/` to Git.
+* Do not copy credential values into project documentation.
+* Do not expose access tokens, refresh tokens, client secrets, or raw OAuth responses to renderer code.
+* OAuth and token lifecycle logic must remain in Electron main.
+* Stored token state must live under Electron `app.getPath("userData")`, not in the Markdown workspace.
+* Use Electron `safeStorage` where available for stored token payloads.
+
+Implementation boundary:
+
+* This setup enables the OAuth foundation work only.
+* Do not implement full Google Drive sync in the same step.
+* The first implementation target is connect, disconnect, token persistence,
+  connection status restoration, and recoverable auth failure handling.
+```
 
 ## Official References
 

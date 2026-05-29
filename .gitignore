@@ -10,4 +10,5 @@ npm-debug.log*
 /playwright/.cache/
 /playwright/.auth/
 
+# OAuth2 client secrets
 credentials/
